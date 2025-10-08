@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import {
@@ -31,16 +31,14 @@ import { X } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { roleService, userService } from '@/gateway/services'
+import { roleService, userService, utilityService } from '@/gateway/services'
 import { IconLoader2 } from '@tabler/icons-react'
 import { User } from '../data/schema'
 import type { RoleAndPermission } from '@/gateway/types/api'
 
 const assignRoleSchema = z.object({
   roleName: z.string().min(1, 'Please select a role'),
-  permissionLevel: z.enum(['unit', 'state', 'national'], {
-    required_error: 'Please select a permission level',
-  }),
+  permissionLevel: z.string().min(1, 'Please select a permission level'),
 })
 
 type AssignRoleFormData = z.infer<typeof assignRoleSchema>
@@ -63,7 +61,7 @@ export function UsersAssignRoleDialog({
     resolver: zodResolver(assignRoleSchema),
     defaultValues: {
       roleName: '',
-      permissionLevel: 'unit',
+      permissionLevel: '',
     },
   })
 
@@ -72,6 +70,19 @@ export function UsersAssignRoleDialog({
     queryKey: ['roles'],
     queryFn: () => roleService.getAllRoles(),
   })
+
+  // Fetch assignable permission levels
+  const { data: assignableLevels, isLoading: loadingPermissionLevels } = useQuery({
+    queryKey: ['assignable-permission-levels'],
+    queryFn: () => utilityService.getAssignablePermissionLevels(),
+  })
+
+  // Set default permission level when data is loaded
+  useEffect(() => {
+    if (assignableLevels && assignableLevels.length > 0 && !form.getValues('permissionLevel')) {
+      form.setValue('permissionLevel', assignableLevels[0].value)
+    }
+  }, [assignableLevels, form])
 
   // Assign role mutation
   const assignRoleMutation = useMutation({
@@ -184,9 +195,17 @@ export function UsersAssignRoleDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="unit">Unit</SelectItem>
-                        <SelectItem value="state">State</SelectItem>
-                        <SelectItem value="national">National</SelectItem>
+                        {loadingPermissionLevels ? (
+                          <div className="flex items-center justify-center p-4">
+                            <IconLoader2 className="h-4 w-4 animate-spin" />
+                          </div>
+                        ) : (
+                          assignableLevels?.map((level) => (
+                            <SelectItem key={level.value} value={level.value}>
+                              {level.label}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

@@ -52,7 +52,7 @@ const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   unit: z.string().min(1, { message: "Unit required" }),
   phone: z.string().min(7, { message: "Phone required" }),
-  level: z.string().min(1, { message: "Level required" }),
+  level: z.string().optional(),
   dob: z.date({ required_error: "Date of birth required" }),
 })
 
@@ -77,7 +77,7 @@ async function createUser(data: FormValues) {
     email: data.email,
     unit: data.unit,
     phone: data.phone,
-    level: data.level,
+    level: data.level === "none" ? "" : data.level || "",
     dob: data.dob.toISOString(),
   }
   return userService.createUser(payload)
@@ -97,7 +97,7 @@ export function SignUpForm({ className, onSuccess, ...props }: SignUpFormProps) 
       email: "",
       unit: "",
       phone: "",
-      level: "Year 1",
+      level: "none",
       dob: undefined,
     },
   })
@@ -140,7 +140,7 @@ export function SignUpForm({ className, onSuccess, ...props }: SignUpFormProps) 
               email: user.email || "",
               phone: user.phoneNo || "",
               unit: "",
-              level: "Year 1",
+              level: "none",
               dob: user.dateOfBirth ? new Date(user.dateOfBirth) : undefined,
             })
           }
@@ -172,7 +172,7 @@ export function SignUpForm({ className, onSuccess, ...props }: SignUpFormProps) 
         form.setValue("lastName", user.surname || "")
         form.setValue("email", user.email || "")
         form.setValue("phone", user.phoneNo || "")
-        form.setValue("level", "")
+        form.setValue("level", "none")
         if (user.dateOfBirth) {
           form.setValue("dob", new Date(user.dateOfBirth))
         }
@@ -360,14 +360,15 @@ export function SignUpForm({ className, onSuccess, ...props }: SignUpFormProps) 
               name="level"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Level</FormLabel>
+                  <FormLabel>Level (Optional)</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select your level" />
+                        <SelectValue placeholder="Select your level (optional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="none">No level selected</SelectItem>
                       <SelectItem value="Year 1">Year 1</SelectItem>
                       <SelectItem value="Year 2">Year 2</SelectItem>
                       <SelectItem value="Year 3">Year 3</SelectItem>

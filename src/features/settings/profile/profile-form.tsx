@@ -36,6 +36,27 @@ import { IconLoader2 } from "@tabler/icons-react"
 import { userService } from "@/gateway/services"
 import { UserProfile } from "@/gateway/types/api"
 
+// Backend response type that matches the actual API response
+interface BackendUserProfile {
+  id: string
+  memberNo: string
+  dob: string
+  firstName: string
+  lastName: string
+  email: string
+  unit: string
+  phone: string
+  state: string
+  status: string
+  userRoles: Array<{
+    roleId: string
+    role: {
+      name: string
+    }
+    permissionLevel: string
+  }>
+}
+
 
 
 const profileFormSchema = z.object({
@@ -66,7 +87,7 @@ export default function ProfileForm() {
       phoneNumber: "",
       dob: undefined,
       unit: "",
-      level: "Year 1",
+      level: "none",
     },
   })
   const { data, isLoading, error } = useQuery<UserProfile>({
@@ -76,15 +97,16 @@ export default function ProfileForm() {
 
   useEffect(() => {
     if (data) {
+      const backendData = data as unknown as BackendUserProfile
       form.reset({
-        memberNumber: data.memberNo || "",
-        firstName: data.firstName || "",
-        lastName: data.lastName || "",
-        email: data.email || "",
-        phoneNumber: data.phone || "",
-        dob: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
-        unit: data.unit || "",
-        level: data.state || "Year 1",
+        memberNumber: backendData.memberNo || "",
+        firstName: backendData.firstName || "",
+        lastName: backendData.lastName || "",
+        email: backendData.email || "",
+        phoneNumber: backendData.phone || "",
+        dob: backendData.dob ? new Date(backendData.dob) : undefined,
+        unit: backendData.unit || "",
+        level: "none", // No level field in backend response
       })
     }
   }, [data, form])
@@ -241,6 +263,7 @@ export default function ProfileForm() {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  <SelectItem value="none">No level selected</SelectItem>
                   <SelectItem value="Year 1">Year 1</SelectItem>
                   <SelectItem value="Year 2">Year 2</SelectItem>
                   <SelectItem value="Year 3">Year 3</SelectItem>
