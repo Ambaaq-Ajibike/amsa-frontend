@@ -38,7 +38,7 @@ import type { RoleAndPermission } from '@/gateway/types/api'
 
 const assignRoleSchema = z.object({
   roleName: z.string().min(1, 'Please select a role'),
-  permissionLevel: z.string().min(1, 'Please select a permission level'),
+  permissionLevel: z.enum(['unit', 'state', 'national']),
 })
 
 type AssignRoleFormData = z.infer<typeof assignRoleSchema>
@@ -61,7 +61,7 @@ export function UsersAssignRoleDialog({
     resolver: zodResolver(assignRoleSchema),
     defaultValues: {
       roleName: '',
-      permissionLevel: '',
+      permissionLevel: 'unit' as const,
     },
   })
 
@@ -80,7 +80,7 @@ export function UsersAssignRoleDialog({
   // Set default permission level when data is loaded
   useEffect(() => {
     if (assignableLevels && assignableLevels.length > 0 && !form.getValues('permissionLevel')) {
-      form.setValue('permissionLevel', assignableLevels[0].value)
+      form.setValue('permissionLevel', assignableLevels[0].value as 'unit' | 'state' | 'national')
     }
   }, [assignableLevels, form])
 
