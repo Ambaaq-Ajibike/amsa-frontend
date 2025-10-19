@@ -197,7 +197,7 @@ export default function LandingPage() {
                   </div>
                   <h3 className="mb-2 text-xl font-semibold">Ready to join our community?</h3>
                   <p className="mb-6 text-muted-foreground">
-                    Become part of a 40-year legacy of unity, excellence, and service
+                    Become part of a 42-year legacy of unity, excellence, and service
                   </p>
                   <Link to="/sign-up">
                     <Button className="w-full">
@@ -256,7 +256,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
-            <p>&copy; 2024 AMSA Nigeria. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} AMSA Nigeria. All rights reserved.</p>
           </div>
         </div>
       </footer>
