@@ -44,7 +44,7 @@ export const handleApiError = (error: any): ApiError => {
     if (responseData?.message) {
       return responseData.message
     }
-    return null
+    return ''
   }
   
   // Handle different HTTP status codes

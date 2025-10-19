@@ -1,8 +1,4 @@
 "use client"
-
-import { useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { showSuccessToast, showErrorToast } from "@/utils/error-handler"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,8 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { IconCalendar, IconUsers, IconLoader } from "@tabler/icons-react"
-import { eventService } from "@/gateway/services"
+import { IconCalendar, IconUsers } from "@tabler/icons-react"
 import { Event } from "@/gateway/types/api"
 import { format } from "date-fns"
 
@@ -25,33 +20,6 @@ interface EventRegistrationDialogProps {
 }
 
 export function EventRegistrationDialog({ event, open, onOpenChange }: EventRegistrationDialogProps) {
-  const queryClient = useQueryClient()
-  const [isRegistering, setIsRegistering] = useState(false)
-
-  const { mutateAsync: registerForEvent } = useMutation({
-    mutationFn: eventService.registerForEvent,
-    onSuccess: (data: unknown) => {
-      const message = (data as { message?: string })?.message || "Successfully registered for the event!"
-      showSuccessToast(message)
-      queryClient.invalidateQueries({ queryKey: ['events'] })
-      queryClient.invalidateQueries({ queryKey: ['user-events'] })
-      onOpenChange(false)
-    },
-    onError: (error: unknown) => {
-      showErrorToast(error)
-    },
-  })
-
-  const handleRegister = async () => {
-    if (!event) return
-    
-    setIsRegistering(true)
-    try {
-      await registerForEvent(event.id)
-    } finally {
-      setIsRegistering(false)
-    }
-  }
 
   if (!event) return null
 

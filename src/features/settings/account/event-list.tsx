@@ -8,19 +8,8 @@ import { showSuccessToast, showErrorToast } from '@/utils/error-handler'
 import { LoaderCircleIcon } from 'lucide-react'
 import { IconLoader2 } from '@tabler/icons-react'
 
-interface Event {
-  id: string
-  title: string
-  startDate: string
-}
 
-interface EventResponse {
-  items: Event[]
-  totalItems: number
-  page: number
-  pageSize: number
-  totalPages: number
-}
+
 
 export async function getEvents(status: string = 'upcoming') {
   const res = await eventService.getEvents({
