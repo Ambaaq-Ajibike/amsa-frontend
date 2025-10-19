@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { toast } from "sonner"
+import { showSuccessToast, showErrorToast } from "@/utils/error-handler"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -32,13 +32,14 @@ export function CheckInDialog({ participant, open, onOpenChange }: CheckInDialog
   const { mutateAsync: markPresent } = useMutation({
     mutationFn: ({ eventId, userId }: { eventId: string; userId: string }) =>
       eventService.markParticipantPresent(eventId, userId),
-    onSuccess: () => {
-      toast.success("Participant checked in successfully!")
+    onSuccess: (data: unknown) => {
+      const message = (data as { message?: string })?.message || "Participant checked in successfully!"
+      showSuccessToast(message)
       queryClient.invalidateQueries({ queryKey: ['participants'] })
       onOpenChange(false)
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to check in participant")
+    onError: (error: unknown) => {
+      showErrorToast(error)
     },
   })
 

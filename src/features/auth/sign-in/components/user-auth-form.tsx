@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/password-input"
 import { IconLoader } from "@tabler/icons-react"
-import { toast } from "sonner"
+import { showSuccessToast, showErrorToast } from "@/utils/error-handler"
 import { authService } from "@/gateway/services"
 import { useAuthStore } from "@/stores/authStore"
 import { getRedirectPath } from "@/utils/redirect-utils"
@@ -79,7 +79,7 @@ export function UserAuthForm({ className, onSuccess, ...props }: UserAuthFormPro
       localStorage.setItem("expiresIn", res.expiresIn.toString())
       localStorage.setItem("scope", res.scope)
 
-      toast.success("Login successful")
+      showSuccessToast("Login successful")
       
       // Redirect based on user permissions and roles
       const redirectPath = getRedirectPath()
@@ -87,10 +87,7 @@ export function UserAuthForm({ className, onSuccess, ...props }: UserAuthFormPro
       
       if (onSuccess) onSuccess()
     } catch (err: unknown) {
-      const errorMessage = err && typeof err === 'object' && 'response' in err 
-        ? (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Login failed"
-        : "Login failed"
-      toast.error(errorMessage)
+      showErrorToast(err)
     }
   }
 

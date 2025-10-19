@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { toast } from "sonner"
+import { showSuccessToast, showErrorToast } from "@/utils/error-handler"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -30,14 +30,15 @@ export function EventRegistrationDialog({ event, open, onOpenChange }: EventRegi
 
   const { mutateAsync: registerForEvent } = useMutation({
     mutationFn: eventService.registerForEvent,
-    onSuccess: () => {
-      toast.success("Successfully registered for the event!")
+    onSuccess: (data: unknown) => {
+      const message = (data as { message?: string })?.message || "Successfully registered for the event!"
+      showSuccessToast(message)
       queryClient.invalidateQueries({ queryKey: ['events'] })
       queryClient.invalidateQueries({ queryKey: ['user-events'] })
       onOpenChange(false)
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to register for event")
+    onError: (error: unknown) => {
+      showErrorToast(error)
     },
   })
 
@@ -146,19 +147,6 @@ export function EventRegistrationDialog({ event, open, onOpenChange }: EventRegi
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
-          </Button>
-          <Button 
-            onClick={handleRegister} 
-            disabled={isRegistering || event.status === 'completed'}
-          >
-            {isRegistering ? (
-              <>
-                <IconLoader className="h-4 w-4 animate-spin mr-2" />
-                Registering...
-              </>
-            ) : (
-              'Register for Event'
-            )}
           </Button>
         </DialogFooter>
       </DialogContent>

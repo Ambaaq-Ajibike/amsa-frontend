@@ -37,7 +37,7 @@ import { Link, useNavigate } from "@tanstack/react-router"
 import { SelectDropdown } from "@/components/select-dropdown"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { IconLoader } from "@tabler/icons-react"
-import { toast } from "sonner"
+import { showSuccessToast, showErrorToast } from "@/utils/error-handler"
 
 interface SignUpFormProps extends HTMLAttributes<HTMLFormElement> {
   onSuccess?: () => void
@@ -192,14 +192,14 @@ export function SignUpForm({ className, onSuccess, ...props }: SignUpFormProps) 
   async function onSubmit(values: FormValues) {
     try {
       await createUserMutation(values)
-      toast.success("User created successfully")
+      showSuccessToast("User created successfully")
       form.reset()
       setCurrentStep(1)
       // Redirect to sign-in page after successful account creation
       navigate({ to: "/sign-in" })
       if (onSuccess) onSuccess()
-    } catch (_err) {
-      toast.error("Failed to create user")
+    } catch (err) {
+      showErrorToast(err)
     }
   }
 

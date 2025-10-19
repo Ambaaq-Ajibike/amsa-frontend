@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { z } from "zod"
-import { toast } from "sonner"
+import { showSuccessToast, showErrorToast } from "@/utils/error-handler"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -65,15 +65,16 @@ export function RoleAssignmentDialog({ user, open, onOpenChange }: RoleAssignmen
 
   const { mutateAsync: assignRole, isPending } = useMutation({
     mutationFn: userService.assignUserRole,
-    onSuccess: () => {
-      toast.success("User roles updated successfully!")
+    onSuccess: (data: unknown) => {
+      const message = (data as { message?: string })?.message || "User roles updated successfully!"
+      showSuccessToast(message)
       queryClient.invalidateQueries({ queryKey: ['users'] })
       onOpenChange(false)
       form.reset()
       setSelectedRoles({})
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to update user roles")
+    onError: (error: unknown) => {
+      showErrorToast(error)
     },
   })
 

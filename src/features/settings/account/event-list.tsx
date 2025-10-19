@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import { getRequest, postRequest } from '@/gateway/apiService'
-import { showSubmittedData } from '@/utils/show-submitted-data'
+import { eventService } from '@/gateway/services'
+import { showSuccessToast, showErrorToast } from '@/utils/error-handler'
 import { LoaderCircleIcon } from 'lucide-react'
 import { IconLoader2 } from '@tabler/icons-react'
 
@@ -23,9 +23,10 @@ interface EventResponse {
 }
 
 export async function getEvents(status: string = 'upcoming') {
-  const res = await getRequest<EventResponse>(
-    `/events?Status=${status}&IsAscending=true`
-  )
+  const res = await eventService.getEvents({
+    status: status as 'upcoming' | 'ongoing' | 'completed',
+    isAscending: true
+  })
   return res.items.map((event) => ({
     id: event.id,
     name: event.title,
@@ -34,10 +35,7 @@ export async function getEvents(status: string = 'upcoming') {
 }
 
 async function registerEvent(eventId: string) {
-  return postRequest<{ success: boolean }>(
-    `events/${eventId}/register`,
-    {}
-  )
+  return eventService.registerForEvent(eventId)
 }
 
 export function EventList() {
@@ -51,13 +49,14 @@ export function EventList() {
 
   const { mutate } = useMutation({
     mutationFn: registerEvent,
-    onSuccess: () => {
-      showSubmittedData('Event Registration Successful!')
+    onSuccess: (data: unknown) => {
+      const message = (data as { message?: string })?.message || 'Event Registration Successful!'
+      showSuccessToast(message)
       setRegisteringId(null)
       queryClient.invalidateQueries({ queryKey: ['events', 'upcoming'] })
     },
-    onError: () => {
-      showSubmittedData('Event Registration Failed!')
+    onError: (error: unknown) => {
+      showErrorToast(error)
       setRegisteringId(null)
     },
   })

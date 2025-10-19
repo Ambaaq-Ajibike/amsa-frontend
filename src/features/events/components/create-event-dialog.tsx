@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { z } from "zod"
-import { toast } from "sonner"
+import { showSuccessToast, showErrorToast, showWarningToast } from "@/utils/error-handler"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -71,15 +71,15 @@ export function CreateEventDialog({ open, onOpenChange }: CreateEventDialogProps
 
   const { mutateAsync: createEvent, isPending } = useMutation({
     mutationFn: eventService.createEvent,
-    onSuccess: () => {
-      toast.success("Event created successfully!")
+    onSuccess: (data: unknown) => {
+      const message = (data as { message?: string })?.message || "Event created successfully!"
+      showSuccessToast(message)
       queryClient.invalidateQueries({ queryKey: ['events'] })
       form.reset()
       onOpenChange(false)
     },
     onError: (error: unknown) => {
-      const errorMessage = error instanceof Error ? error.message : "Failed to create event"
-      toast.error(errorMessage)
+      showErrorToast(error)
     },
   })
 
@@ -157,7 +157,7 @@ export function CreateEventDialog({ open, onOpenChange }: CreateEventDialogProps
     const filesToUpload = Array.from(files).slice(0, maxFiles)
     
     if (files.length > maxFiles) {
-      toast.warning(`Only the first ${maxFiles} files will be uploaded`)
+      showWarningToast(`Only the first ${maxFiles} files will be uploaded`)
     }
 
     setUploadingImages(true)
@@ -169,14 +169,14 @@ export function CreateEventDialog({ open, onOpenChange }: CreateEventDialogProps
       const currentImages = form.getValues("images")
       form.setValue("images", [...currentImages, ...uploadedUrls])
       
-      toast.success(`${uploadedUrls.length} image(s) uploaded successfully!`)
+      showSuccessToast(`${uploadedUrls.length} image(s) uploaded successfully!`)
     } catch (error) {
       // Log error for debugging in development
       if (import.meta.env.DEV) {
         // eslint-disable-next-line no-console
         console.error('Upload error:', error)
       }
-      toast.error('Failed to upload images. Please try again.')
+      showErrorToast({ message: 'Failed to upload images. Please try again.' })
     } finally {
       setUploadingImages(false)
       // Reset the input

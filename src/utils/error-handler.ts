@@ -34,74 +34,87 @@ export const handleApiError = (error: any): ApiError => {
   // Server error with response
   const { status, data } = error.response
   
+  // Extract message from RFC 7231 format (detail field) or fallback to message field
+  const getErrorMessage = (responseData: any): string => {
+    // RFC 7231 format: { "detail": "User already registered for this event." }
+    if (responseData?.detail) {
+      return responseData.detail
+    }
+    // Fallback to message field
+    if (responseData?.message) {
+      return responseData.message
+    }
+    return null
+  }
+  
   // Handle different HTTP status codes
   switch (status) {
     case 400:
       return {
-        message: data?.message || "Bad request. Please check your input.",
+        message: getErrorMessage(data) || "Bad request. Please check your input.",
         status,
         code: "BAD_REQUEST",
         details: data
       }
     case 401:
       return {
-        message: "Unauthorized. Please sign in again.",
+        message: getErrorMessage(data) || "Unauthorized. Please sign in again.",
         status,
         code: "UNAUTHORIZED",
         details: data
       }
     case 403:
       return {
-        message: "Forbidden. You don't have permission to perform this action.",
+        message: getErrorMessage(data) || "Forbidden. You don't have permission to perform this action.",
         status,
         code: "FORBIDDEN",
         details: data
       }
     case 404:
       return {
-        message: "Resource not found.",
+        message: getErrorMessage(data) || "Resource not found.",
         status,
         code: "NOT_FOUND",
         details: data
       }
     case 409:
       return {
-        message: data?.message || "Conflict. The resource already exists.",
+        message: getErrorMessage(data) || "Conflict. The resource already exists.",
         status,
         code: "CONFLICT",
         details: data
       }
     case 422:
       return {
-        message: data?.message || "Validation error. Please check your input.",
+        message: getErrorMessage(data) || "Validation error. Please check your input.",
         status,
         code: "VALIDATION_ERROR",
         details: data
       }
     case 429:
       return {
-        message: "Too many requests. Please try again later.",
+        message: getErrorMessage(data) || "Too many requests. Please try again later.",
         status,
         code: "RATE_LIMITED",
         details: data
       }
     case 500:
       return {
-        message: "Internal server error. Please try again later.",
+        message: getErrorMessage(data) || "Internal server error. Please try again later.",
         status,
         code: "SERVER_ERROR",
         details: data
       }
     case 503:
       return {
-        message: "Service unavailable. Please try again later.",
+        message: getErrorMessage(data) || "Service unavailable. Please try again later.",
         status,
         code: "SERVICE_UNAVAILABLE",
         details: data
       }
     default:
       return {
-        message: data?.message || "An unexpected error occurred.",
+        message: getErrorMessage(data) || "An unexpected error occurred.",
         status,
         code: "UNKNOWN_ERROR",
         details: data
@@ -113,30 +126,72 @@ export const showErrorToast = (error: any, customMessage?: string) => {
   const apiError = handleApiError(error)
   const message = customMessage || apiError.message
   
+  // Debug logging in development
+  if (import.meta.env.DEV) {
+    console.log('Error details:', {
+      originalError: error,
+      processedError: apiError,
+      finalMessage: message
+    })
+  }
+  
   toast.error(message, {
-    description: apiError.code ? `Error Code: ${apiError.code}` : undefined,
-    duration: 5000,
+    // description: apiError.code ? `Error Code: ${apiError.code}` : undefined,
+    duration: 8000,
+    style: {
+      background: 'hsl(0, 84%, 60%)',
+      color: 'hsl(355, 7%, 97%)',
+      border: '1px solid hsl(0, 84%, 50%)',
+      fontSize: '14px',
+      fontWeight: '500',
+    },
   })
 }
 
 export const showSuccessToast = (message: string, description?: string) => {
+  // Debug logging in development
+  if (import.meta.env.DEV) {
+    console.log('Success toast:', { message, description })
+  }
+  
   toast.success(message, {
     description,
-    duration: 3000,
+    duration: 5000,
+    style: {
+      background: 'hsl(142, 76%, 36%)',
+      color: 'hsl(355, 7%, 97%)',
+      border: '1px solid hsl(142, 76%, 26%)',
+      fontSize: '14px',
+      fontWeight: '500',
+    },
   })
 }
 
 export const showInfoToast = (message: string, description?: string) => {
   toast.info(message, {
     description,
-    duration: 3000,
+    duration: 5000,
+    style: {
+      background: 'hsl(221, 83%, 53%)',
+      color: 'hsl(355, 7%, 97%)',
+      border: '1px solid hsl(221, 83%, 43%)',
+      fontSize: '14px',
+      fontWeight: '500',
+    },
   })
 }
 
 export const showWarningToast = (message: string, description?: string) => {
   toast.warning(message, {
     description,
-    duration: 4000,
+    duration: 6000,
+    style: {
+      background: 'hsl(38, 92%, 50%)',
+      color: 'hsl(355, 7%, 97%)',
+      border: '1px solid hsl(38, 92%, 40%)',
+      fontSize: '14px',
+      fontWeight: '500',
+    },
   })
 }
 

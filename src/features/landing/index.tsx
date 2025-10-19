@@ -143,7 +143,7 @@ export default function LandingPage() {
             Our Core Pillars of Development
           </h2>
           <p className="text-lg text-muted-foreground">
-            AMSA is built on four fundamental principles that guide our mission and activities
+            AMSA is built on six fundamental principles that guide our mission and activities
           </p>
         </div>
         

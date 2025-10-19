@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { eventService } from '@/gateway/services'
-import { showSubmittedData } from '@/utils/show-submitted-data'
+import { showSuccessToast, showErrorToast } from '@/utils/error-handler'
 import { IconLoader2, IconCalendar, IconClock } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import type { Event } from '@/gateway/types/api'
@@ -15,9 +15,8 @@ import type { Event } from '@/gateway/types/api'
 
 
 async function getAllEvents() {
-  // Use the same endpoint as the events table with a large page size to get all events
-  const res = await eventService.getEvents({ page: 1, pageSize: 1000 })
-  return res.items
+  // Get all events from the /events/all endpoint
+  return await eventService.getAllEvents()
 }
 
 
@@ -35,23 +34,24 @@ export function EventsList() {
     queryFn: getAllEvents,
   })
 
-  // Since both getAllEvents and getUserEvents now use the same endpoint,
-  // we can remove the separate user events query and use a single events query
-  // const { data: userEvents, isLoading: userEventsLoading } = useQuery({
-  //   queryKey: ['user-events'],
-  //   queryFn: getUserEvents,
-  // })
+  // Get user's registered events to check registration status
+  const { data: userRegisteredEvents } = useQuery({
+    queryKey: ['user-registered-events'],
+    queryFn: () => eventService.getUserRegisteredEvents(),
+  })
 
   const { mutate: registerMutation } = useMutation({
     mutationFn: registerEvent,
-    onSuccess: () => {
-      showSubmittedData('Event Registration Successful!')
+    onSuccess: (data: unknown) => {
+      const message = (data as { message?: string })?.message || 'Event Registration Successful!'
+      showSuccessToast(message)
       setRegisteringId(null)
       setSelectedEvent(null)
       queryClient.invalidateQueries({ queryKey: ['all-events'] })
+      queryClient.invalidateQueries({ queryKey: ['user-registered-events'] })
     },
-    onError: () => {
-      showSubmittedData('Event Registration Failed!')
+    onError: (error: unknown) => {
+      showErrorToast(error)
       setRegisteringId(null)
       setSelectedEvent(null)
     },
@@ -71,13 +71,10 @@ export function EventsList() {
     return <p className='text-red-500'>Failed to load events</p>
   }
 
-  // Since we're using the same endpoint for both all events and user events,
-  // we'll need to determine user registration status differently
-  // For now, we'll assume user is not registered and allow registration for upcoming events
-  const isUserRegistered = (_eventId: string) => {
-    // TODO: Implement proper user registration checking
-    // This might require a separate API call to get user's registered events
-    return false
+  // Check if user is registered for a specific event
+  const isUserRegistered = (eventId: string) => {
+    if (!userRegisteredEvents) return false
+    return userRegisteredEvents.some(event => event.id === eventId)
   }
 
 
@@ -184,7 +181,6 @@ export function EventsList() {
                           <AlertDialogTitle>Confirm Event Registration</AlertDialogTitle>
                           <AlertDialogDescription>
                             Are you sure you want to register for "{selectedEvent?.title}"? 
-                            This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

@@ -1,4 +1,4 @@
-import { showSubmittedData } from '@/utils/show-submitted-data'
+import { showSuccessToast } from '@/utils/error-handler'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { useTasks } from '../context/tasks-context'
 import { TasksImportDialog } from './tasks-import-dialog'
@@ -51,7 +51,7 @@ export function TasksDialogs() {
               setTimeout(() => {
                 setCurrentRow(null)
               }, 500)
-              showSubmittedData('Task deleted successfully')
+              showSuccessToast('Task deleted successfully')
             }}
             className='max-w-md'
             title={`Delete this event: ${currentRow.name} ?`}
