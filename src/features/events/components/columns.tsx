@@ -35,7 +35,11 @@ export const columns: ColumnDef<Event>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Event Name' />
     ),
-    cell: ({ row }) => <div className='w-[80px]'>{row.getValue('name')}</div>,
+    cell: ({ row }) => (
+      <div className='max-w-[200px] truncate font-medium'>
+        {row.getValue('name')}
+      </div>
+    ),
     enableSorting: false,
     enableHiding: false,
   },
@@ -47,7 +51,7 @@ export const columns: ColumnDef<Event>[] = [
     cell: ({ row }) => {
       return (
         <div className='flex space-x-2'>
-          <span className='max-w-32 truncate font-medium sm:max-w-72 md:max-w-[31rem]'>
+          <span className='max-w-[300px] truncate font-medium'>
             {row.getValue('theme')}
           </span>
         </div>

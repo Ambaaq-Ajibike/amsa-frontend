@@ -10,10 +10,10 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { IconLoader2 } from '@tabler/icons-react'
 import {
   Table,
   TableBody,
@@ -36,9 +36,24 @@ declare module '@tanstack/react-table' {
 interface DataTableProps {
   columns: ColumnDef<Participants>[]
   data: Participants[]
+  page: number
+  pageSize: number
+  totalItems: number
+  onPageChange: (page: number) => void
+  onPageSizeChange: (size: number) => void
+  isLoading?: boolean
 }
 
-export function ParticipantsTable({ columns, data }: DataTableProps) {
+export function ParticipantsTable({ 
+  columns, 
+  data, 
+  page, 
+  pageSize, 
+  totalItems, 
+  onPageChange, 
+  onPageSizeChange,
+  isLoading,
+}: DataTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -47,11 +62,22 @@ export function ParticipantsTable({ columns, data }: DataTableProps) {
   const table = useReactTable({
     data,
     columns,
+    pageCount: Math.ceil(totalItems / pageSize), // total pages
     state: {
       sorting,
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination: {
+        pageIndex: page - 1,
+        pageSize,
+      },
+    },
+    manualPagination: true,
+    onPaginationChange: (updater) => {
+      const next = typeof updater === 'function' ? updater({ pageIndex: page - 1, pageSize }) : updater
+      onPageChange(next.pageIndex + 1)
+      onPageSizeChange(next.pageSize)
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
@@ -60,7 +86,6 @@ export function ParticipantsTable({ columns, data }: DataTableProps) {
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
@@ -94,7 +119,19 @@ export function ParticipantsTable({ columns, data }: DataTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className='h-24 text-center'
+                >
+                  <div className='flex items-center justify-center gap-2'>
+                    <IconLoader2 className='h-4 w-4 animate-spin' />
+                    <span>Loading...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

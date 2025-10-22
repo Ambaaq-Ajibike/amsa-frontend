@@ -13,8 +13,8 @@ import UsersProvider from './context/users-context'
 import { userService } from '@/gateway/services'
 
 export default function Users() {
-  const [page, _setPage] = useState(1)
-  const [pageSize, _setPageSize] = useState(20)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
   const [keyword, setKeyword] = useState('')
   const [debouncedKeyword, setDebouncedKeyword] = useState('')
   const [unit, _setUnit] = useState('')
@@ -66,6 +66,11 @@ export default function Users() {
           <UsersTable 
             data={data?.items || []} 
             columns={columns}
+            page={data?.page || 1}
+            pageSize={data?.pageSize || 20}
+            totalItems={data?.totalItems || 0}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
             onKeywordChange={setKeyword}
             isLoading={isLoading}
           />

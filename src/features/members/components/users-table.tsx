@@ -10,7 +10,6 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
@@ -37,11 +36,26 @@ declare module '@tanstack/react-table' {
 interface DataTableProps {
   columns: ColumnDef<User>[]
   data: User[]
+  page: number
+  pageSize: number
+  totalItems: number
+  onPageChange: (page: number) => void
+  onPageSizeChange: (size: number) => void
   onKeywordChange?: (keyword: string) => void
   isLoading?: boolean
 }
 
-export function UsersTable({ columns, data, onKeywordChange, isLoading }: DataTableProps) {
+export function UsersTable({ 
+  columns, 
+  data, 
+  page, 
+  pageSize, 
+  totalItems, 
+  onPageChange,
+  onPageSizeChange,
+  onKeywordChange,
+  isLoading,
+}: DataTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -50,11 +64,22 @@ export function UsersTable({ columns, data, onKeywordChange, isLoading }: DataTa
   const table = useReactTable({
     data,
     columns,
+    pageCount: Math.ceil(totalItems / pageSize), // total pages
     state: {
       sorting,
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination: {
+        pageIndex: page - 1,
+        pageSize,
+      },
+    },
+    manualPagination: true,
+    onPaginationChange: (updater) => {
+      const next = typeof updater === 'function' ? updater({ pageIndex: page - 1, pageSize }) : updater
+      onPageChange(next.pageIndex + 1)
+      onPageSizeChange(next.pageSize)
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
@@ -63,7 +88,6 @@ export function UsersTable({ columns, data, onKeywordChange, isLoading }: DataTa
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),

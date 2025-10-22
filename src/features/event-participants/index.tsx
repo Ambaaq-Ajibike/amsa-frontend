@@ -13,7 +13,6 @@ import { UsersDialogs } from './components/users-dialogs'
 import { ParticipantsTable } from './components/participants-table'
 import UsersProvider from './context/users-context'
 import { eventService } from '@/gateway/services'
-import { IconLoader2 } from '@tabler/icons-react'
 import { useState } from 'react'
 
 
@@ -29,13 +28,13 @@ async function getParticipants(eventId: string, page: number, pageSize: number) 
 
 export default function EventParticipants() {
   const search = useSearch({ from: '/_authenticated/event-participants/' })
-  const event = (search as any)?.event
-  const [page] = useState(1)
-  const [pageSize] = useState(20)
+  const event = (search as { event?: string })?.event
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['participants', event, page, pageSize],
-    queryFn: () => getParticipants(event, page, pageSize),
+    queryFn: () => getParticipants(event!, page, pageSize),
     enabled: !!event, // only run if eventId exists
   })
 
@@ -65,27 +64,26 @@ export default function EventParticipants() {
         </div>
 
         <div className="-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12">
-          {isLoading && (
-            <div className="flex justify-center items-center">
-              <IconLoader2 size={70} className="animate-spin" />
-            </div>
-          )}
           {isError && <p className="text-red-500">Failed to load participants</p>}
-          {data && (
-            <ParticipantsTable
-              data={data.items.map((p) => ({
-                userId: p.userId,
-                memberNumber: p.user.memberNo,
-                firstName: p.user.firstName,
-                lastName: p.user.lastName,
-                email: p.user.email,
-                phoneNumber: p.user.phone,
-                unit: p.user.unit,
-                isPresent: p.isPresent || false, // Mock false if not present in response
-              }))}
-              columns={createColumns(event)}
-            />
-          )}
+          <ParticipantsTable
+            data={data?.items?.map((p) => ({
+              userId: p.userId,
+              memberNumber: p.user.memberNo,
+              firstName: p.user.firstName,
+              lastName: p.user.lastName,
+              email: p.user.email,
+              phoneNumber: p.user.phone,
+              unit: p.user.unit,
+              isPresent: p.isPresent || false, // Mock false if not present in response
+            })) || []}
+            columns={createColumns(event!)}
+            page={data?.page || 1}
+            pageSize={data?.pageSize || 20}
+            totalItems={data?.totalItems || 0}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            isLoading={isLoading}
+          />
         </div>
       </Main>
 
