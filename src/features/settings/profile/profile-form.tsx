@@ -130,7 +130,7 @@ export default function ProfileForm() {
             <FormItem>
               <FormLabel>Member Number</FormLabel>
               <FormControl>
-                <Input placeholder='222222' {...field} />
+                <Input placeholder='222222' {...field} readOnly disabled/>
               </FormControl>
               <FormMessage />
             </FormItem>
