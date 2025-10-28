@@ -139,6 +139,7 @@ export interface EventParticipant {
   eventId: string
   user: User
   isPresent: boolean
+  markedPresent: boolean
   registeredAt: string
   checkedInAt?: string
 }

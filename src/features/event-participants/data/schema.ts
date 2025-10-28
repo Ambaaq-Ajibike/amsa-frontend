@@ -9,6 +9,7 @@ const participantSchema = z.object({
   phoneNumber: z.string(),
   unit: z.string(),
   isPresent: z.boolean().optional().default(false),
+  markedPresent: z.boolean().optional().default(false),
 })
 export type Participants = z.infer<typeof participantSchema>
 

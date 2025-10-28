@@ -27,7 +27,7 @@ function MarkPresentButton({ participant, eventId }: { participant: Participants
     },
   })
 
-  if (participant.isPresent) {
+  if (participant.markedPresent) {
     return (
       <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
         <IconCheck className="h-3 w-3 mr-1" />

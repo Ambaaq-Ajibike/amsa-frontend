@@ -18,6 +18,7 @@ import { useState } from 'react'
 
 
 
+
 async function getParticipants(eventId: string, page: number, pageSize: number, isPresent: boolean | null) {
   return eventService.getEventParticipants({
     eventId,
@@ -77,6 +78,7 @@ export default function EventParticipants() {
               phoneNumber: p.user.phone,
               unit: p.user.unit,
               isPresent: p.isPresent || false, // Mock false if not present in response
+              markedPresent: (p as { markedPresent?: boolean }).markedPresent || false, // Use markedPresent from API response
             })) || []}
             columns={createColumns(event!)}
             page={data?.page || 1}
