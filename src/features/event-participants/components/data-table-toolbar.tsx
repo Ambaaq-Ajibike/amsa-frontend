@@ -4,13 +4,18 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DataTableFacetedFilter } from './data-table-faceted-filter'
 import { DataTableViewOptions } from './data-table-view-options'
+import { PresenceFilter } from './presence-filter'
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
+  isPresent?: boolean | null
+  onIsPresentChange?: (value: boolean | null) => void
 }
 
 export function DataTableToolbar<TData>({
   table,
+  isPresent,
+  onIsPresentChange,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0
 
@@ -28,6 +33,25 @@ export function DataTableToolbar<TData>({
           className='h-8 w-[150px] lg:w-[250px]'
         />
         <div className='flex gap-x-2'>
+          {onIsPresentChange && (
+            <PresenceFilter
+              title='Presence'
+              value={
+                isPresent === null ? 'all' : 
+                isPresent === true ? 'present' : 
+                'absent'
+              }
+              onValueChange={(value) => {
+                if (value === 'all') {
+                  onIsPresentChange(null)
+                } else if (value === 'present') {
+                  onIsPresentChange(true)
+                } else if (value === 'absent') {
+                  onIsPresentChange(false)
+                }
+              }}
+            />
+          )}
           {table.getColumn('status') && (
             <DataTableFacetedFilter
               column={table.getColumn('status')}

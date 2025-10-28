@@ -42,6 +42,8 @@ interface DataTableProps {
   onPageChange: (page: number) => void
   onPageSizeChange: (size: number) => void
   isLoading?: boolean
+  isPresent?: boolean | null
+  onIsPresentChange?: (value: boolean | null) => void
 }
 
 export function ParticipantsTable({ 
@@ -53,6 +55,8 @@ export function ParticipantsTable({
   onPageChange, 
   onPageSizeChange,
   isLoading,
+  isPresent,
+  onIsPresentChange,
 }: DataTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -93,7 +97,11 @@ export function ParticipantsTable({
 
   return (
     <div className='space-y-4'>
-      <DataTableToolbar table={table} />
+      <DataTableToolbar 
+        table={table} 
+        isPresent={isPresent}
+        onIsPresentChange={onIsPresentChange}
+      />
       <div className='rounded-md border'>
         <Table>
           <TableHeader>

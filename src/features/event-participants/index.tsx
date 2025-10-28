@@ -18,11 +18,12 @@ import { useState } from 'react'
 
 
 
-async function getParticipants(eventId: string, page: number, pageSize: number) {
+async function getParticipants(eventId: string, page: number, pageSize: number, isPresent: boolean | null) {
   return eventService.getEventParticipants({
     eventId,
     page,
     pageSize,
+    isPresent: isPresent !== null ? isPresent : undefined,
   })
 }
 
@@ -31,10 +32,11 @@ export default function EventParticipants() {
   const event = (search as { event?: string })?.event
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
+  const [isPresent, setIsPresent] = useState<boolean | null>(null)
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['participants', event, page, pageSize],
-    queryFn: () => getParticipants(event!, page, pageSize),
+    queryKey: ['participants', event, page, pageSize, isPresent],
+    queryFn: () => getParticipants(event!, page, pageSize, isPresent),
     enabled: !!event, // only run if eventId exists
   })
 
@@ -83,6 +85,8 @@ export default function EventParticipants() {
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
             isLoading={isLoading}
+            isPresent={isPresent}
+            onIsPresentChange={setIsPresent}
           />
         </div>
       </Main>
