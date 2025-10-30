@@ -166,7 +166,7 @@ export function EventsList() {
                     <Button variant='outline' className='w-full bg-green-50 text-green-700 border-green-200 hover:bg-green-100' disabled>
                       ✓ Registered
                     </Button>
-                  ) : event.status === 'upcoming' ? (
+                  ) : (event.status === 'upcoming' || event.status === 'ongoing') ? (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button 
