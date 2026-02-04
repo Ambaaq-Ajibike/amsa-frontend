@@ -13,6 +13,8 @@ import { TasksDialogs } from './components/tasks-dialogs'
 import { TasksPrimaryButtons } from './components/tasks-primary-buttons'
 import TasksProvider from './context/tasks-context'
 import { eventService } from '@/gateway/services'
+import { exportTableAsCSV } from '@/utils/export-utils'
+import { showErrorToast, showSuccessToast } from '@/utils/error-handler'
 
 interface Event {
   id: string
@@ -61,6 +63,21 @@ export default function Events() {
     queryFn: () => getEvents(status, debouncedKeyword, page, pageSize),
   })
 
+  const handleExport = async () => {
+    try {
+      if (!data?.items || data.items.length === 0) {
+        showErrorToast('No data to export')
+        return
+      }
+
+      const columns = ['id', 'title', 'description', 'startDate', 'endDate', 'status']
+      exportTableAsCSV(data.items, columns, 'events')
+      showSuccessToast('Events exported successfully')
+    } catch (error) {
+      showErrorToast('Failed to export events')
+    }
+  }
+
   return (
     <TasksProvider>
       <Header fixed>
@@ -100,6 +117,7 @@ export default function Events() {
             onPageSizeChange={setPageSize}
             onStatusChange={(status) => setStatus(status || null)}
             onKeywordChange={setKeyword}
+            onExport={handleExport}
             isLoading={isLoading}
           />
         </div>

@@ -1,4 +1,4 @@
-import { Cross2Icon } from '@radix-ui/react-icons'
+import { Cross2Icon, DownloadIcon } from '@radix-ui/react-icons'
 import { Table } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,12 +11,14 @@ interface DataTableToolbarProps<TData> {
     table: Table<TData>
     onStatusChange?: (status: string | null) => void
     onKeywordChange?: (keyword: string) => void
+    onExport?: () => void
 }
 
 export function DataTableToolbar<TData>({
     table,
     onStatusChange,
     onKeywordChange,
+    onExport,
 }: DataTableToolbarProps<TData>) {
     const isFiltered = table.getState().columnFilters.length > 0
     const statusFilter = table.getColumn('status')?.getFilterValue() as string[]
@@ -88,7 +90,20 @@ export function DataTableToolbar<TData>({
                         )}
                     </div>
                 </div>
-                <DataTableViewOptions table={table} />
+                <div className='flex items-center gap-x-2'>
+                    {onExport && (
+                        <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={onExport}
+                            className='h-8'
+                        >
+                            <DownloadIcon className='mr-2 h-4 w-4' />
+                            Export Excel
+                        </Button>
+                    )}
+                    <DataTableViewOptions table={table} />
+                </div>
             </div>
         </div>
     )

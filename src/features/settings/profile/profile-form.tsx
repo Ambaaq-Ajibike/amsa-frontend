@@ -6,8 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarIcon } from "@radix-ui/react-icons"
 import { format } from "date-fns"
-import { useQuery } from "@tanstack/react-query"
-import { showSubmittedData } from "@/utils/show-submitted-data"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker"
 import { cn } from "@/lib/utils"
@@ -32,9 +31,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { IconLoader2 } from "@tabler/icons-react"
 import { userService } from "@/gateway/services"
 import { UserProfile } from "@/gateway/types/api"
+import { showSuccessToast, showErrorToast } from "@/utils/error-handler"
 
 // Backend response type that matches the actual API response
 interface BackendUserProfile {
@@ -71,11 +72,16 @@ const profileFormSchema = z.object({
   dob: z.date({ required_error: "A date of birth is required." }),
   unit: z.string({ required_error: "Please select a unit." }),
   level: z.string(),
+  courseField: z.string().optional(),
+  exchangeProgramInterest: z.boolean().optional(),
+  cgpa: z.number().min(0).max(5).optional(),
+  graduationYear: z.number().min(2000).max(2100).optional(),
 })
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
 export default function ProfileForm() {
+  const queryClient = useQueryClient()
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     mode: "onChange",
@@ -88,11 +94,39 @@ export default function ProfileForm() {
       dob: undefined,
       unit: "",
       level: "none",
+      courseField: "",
+      exchangeProgramInterest: false,
+      cgpa: undefined,
+      graduationYear: undefined,
     },
   })
   const { data, isLoading, error } = useQuery<UserProfile>({
     queryKey: ["user-profile"],
     queryFn: () => userService.getProfile(),
+  })
+
+  const { mutateAsync: updateProfile, isPending: isUpdating } = useMutation({
+    mutationFn: (profileData: ProfileFormValues) => {
+      return userService.updateProfile({
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        email: profileData.email,
+        phone: profileData.phoneNumber,
+        dateOfBirth: profileData.dob.toISOString(),
+        courseField: profileData.courseField,
+        exchangeProgramInterest: profileData.exchangeProgramInterest,
+        cgpa: profileData.cgpa,
+        graduationYear: profileData.graduationYear,
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] })
+      showSuccessToast("Profile updated successfully")
+    },
+    onError: (error) => {
+      showErrorToast("Failed to update profile")
+      console.error(error)
+    },
   })
 
   useEffect(() => {
@@ -107,6 +141,10 @@ export default function ProfileForm() {
         dob: backendData.dob ? new Date(backendData.dob) : undefined,
         unit: backendData.unit || "",
         level: "none", // No level field in backend response
+        courseField: (backendData as any).courseField || "",
+        exchangeProgramInterest: (backendData as any).exchangeProgramInterest || false,
+        cgpa: (backendData as any).cgpa || undefined,
+        graduationYear: (backendData as any).graduationYear || undefined,
       })
     }
   }, [data, form])
@@ -120,7 +158,13 @@ export default function ProfileForm() {
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit((_data) => showSubmittedData("Profile updated successfully"))}
+        onSubmit={form.handleSubmit(async (data) => {
+          try {
+            await updateProfile(data)
+          } catch (err) {
+            console.error('Profile update error:', err)
+          }
+        })}
         className='space-y-8'
       >
         <FormField
@@ -277,7 +321,87 @@ export default function ProfileForm() {
             </FormItem>
           )}
         />
-        <Button type='submit'>Update profile</Button>
+
+        <FormField
+          control={form.control}
+          name='courseField'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Course/Career Field</FormLabel>
+              <FormControl>
+                <Input placeholder='Medicine, Engineering, etc.' {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name='cgpa'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>CGPA</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder='0.00' 
+                  type='number'
+                  step='0.01'
+                  min='0'
+                  max='5'
+                  {...field}
+                  onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                  value={field.value ?? ''}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name='graduationYear'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Graduation Year</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder={new Date().getFullYear().toString()} 
+                  type='number'
+                  min='2000'
+                  max='2100'
+                  {...field}
+                  onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                  value={field.value ?? ''}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name='exchangeProgramInterest'
+          render={({ field }) => (
+            <FormItem className='flex flex-row items-center space-x-3 space-y-0'>
+              <FormControl>
+                <Checkbox 
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormLabel className='cursor-pointer'>
+                Interested in Exchange Program
+              </FormLabel>
+            </FormItem>
+          )}
+        />
+
+        <Button type='submit' disabled={isUpdating}>
+          {isUpdating ? 'Updating...' : 'Update profile'}
+        </Button>
       </form>
     </Form>
   )

@@ -77,5 +77,58 @@ export const eventService = {
   // Mark participant as present
   markParticipantPresent: async (eventId: string, userId: string): Promise<void> => {
     return postRequest<void, object>(`/events/${eventId}/users/${userId}/mark-present`, {})
+  },
+
+  // Export events as Excel file
+  exportEventsAsExcel: async (params?: EventQueryParams): Promise<Blob> => {
+    const searchParams = new URLSearchParams()
+    
+    if (params?.status) searchParams.append('Status', params.status)
+    if (params?.page) searchParams.append('Page', params.page.toString())
+    if (params?.pageSize) searchParams.append('PageSize', params.pageSize.toString())
+    if (params?.sortBy) searchParams.append('SortBy', params.sortBy)
+    if (params?.keyword) searchParams.append('Keyword', params.keyword)
+    if (params?.isAscending !== undefined) searchParams.append('IsAscending', params.isAscending.toString())
+
+    const queryString = searchParams.toString()
+    const response = await fetch(`/api/events/export${queryString ? `?${queryString}` : ''}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to export events: ${response.statusText}`)
+    }
+
+    return response.blob()
+  },
+
+  // Export event participants as Excel file
+  exportEventParticipants: async (params: EventParticipantsQueryParams): Promise<Blob> => {
+    const searchParams = new URLSearchParams()
+    
+    searchParams.append('EventId', params.eventId)
+    if (params.isPresent !== undefined) searchParams.append('IsPresent', params.isPresent.toString())
+    if (params.page) searchParams.append('Page', params.page.toString())
+    if (params.pageSize) searchParams.append('PageSize', params.pageSize.toString())
+    if (params.sortBy) searchParams.append('SortBy', params.sortBy)
+    if (params.keyword) searchParams.append('Keyword', params.keyword)
+    if (params.isAscending !== undefined) searchParams.append('IsAscending', params.isAscending.toString())
+
+    const queryString = searchParams.toString()
+    const response = await fetch(`/api/events/participants/export?${queryString}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to export event participants: ${response.statusText}`)
+    }
+
+    return response.blob()
   }
 }

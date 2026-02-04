@@ -28,6 +28,7 @@ interface DataTableProps<TData, TValue> {
   onPageSizeChange: (size: number) => void
   onStatusChange: (status: string | null) => void
   onKeywordChange?: (keyword: string) => void
+  onExport?: () => void
   isLoading?: boolean
 }
 
@@ -41,6 +42,7 @@ export function DataTable<TData, TValue>({
   onPageSizeChange,
   onStatusChange,
   onKeywordChange,
+  onExport,
   isLoading,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
@@ -66,7 +68,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className='space-y-4'>
-      <DataTableToolbar table={table} onStatusChange={onStatusChange} onKeywordChange={onKeywordChange} />
+      <DataTableToolbar table={table} onStatusChange={onStatusChange} onKeywordChange={onKeywordChange} onExport={onExport} />
       <div className='rounded-md border'>
         <Table>
           <TableHeader>

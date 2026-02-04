@@ -62,6 +62,10 @@ export interface CreateUserRequest {
   phone: string
   level: string
   dob: string // ISO date string
+  courseField?: string
+  exchangeProgramInterest?: boolean
+  cgpa?: number
+  graduationYear?: number
 }
 
 export interface User {
@@ -76,6 +80,10 @@ export interface User {
   dateOfBirth: string
   roles: string[]
   status: string
+  courseField?: string
+  exchangeProgramInterest?: boolean
+  cgpa?: number
+  graduationYear?: number
   createdAt: string
   updatedAt: string
 }
@@ -91,6 +99,10 @@ export interface UserProfile {
   state: string
   dateOfBirth: string
   roles: string[]
+  courseField?: string
+  exchangeProgramInterest?: boolean
+  cgpa?: number
+  graduationYear?: number
 }
 
 export interface AssignUserRoleRequest {
@@ -233,4 +245,9 @@ export interface UserQueryParams extends PaginationParams {
 export interface EventParticipantsQueryParams extends PaginationParams {
   eventId: string
   isPresent?: boolean
+}
+// Export Types
+export interface ExportRequest {
+  tableType: 'users' | 'events' | 'participants'
+  filters?: Record<string, any>
 }

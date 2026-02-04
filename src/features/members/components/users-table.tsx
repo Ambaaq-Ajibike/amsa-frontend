@@ -42,6 +42,7 @@ interface DataTableProps {
   onPageChange: (page: number) => void
   onPageSizeChange: (size: number) => void
   onKeywordChange?: (keyword: string) => void
+  onExport?: () => void
   isLoading?: boolean
 }
 
@@ -54,6 +55,7 @@ export function UsersTable({
   onPageChange,
   onPageSizeChange,
   onKeywordChange,
+  onExport,
   isLoading,
 }: DataTableProps) {
   const [rowSelection, setRowSelection] = useState({})
@@ -95,7 +97,7 @@ export function UsersTable({
 
   return (
     <div className='space-y-4'>
-      <DataTableToolbar table={table} onKeywordChange={onKeywordChange} />
+      <DataTableToolbar table={table} onKeywordChange={onKeywordChange} onExport={onExport} />
       <div className='rounded-md border'>
         <Table>
           <TableHeader>

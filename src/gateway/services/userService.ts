@@ -1,4 +1,4 @@
-import { getRequest, postRequest } from '../apiService'
+import { getRequest, postRequest, putRequest } from '../apiService'
 import type {
   CreateUserRequest,
   User,
@@ -13,6 +13,11 @@ export const userService = {
   // Get user profile
   getProfile: async (): Promise<UserProfile> => {
     return getRequest<UserProfile>('/users/profile')
+  },
+
+  // Update user profile
+  updateProfile: async (profileData: Partial<UserProfile>): Promise<UserProfile> => {
+    return putRequest<UserProfile, Partial<UserProfile>>('/users/profile', profileData)
   },
 
   // Get user by ID
@@ -50,5 +55,32 @@ export const userService = {
   // Assign role to user
   assignUserRole: async (roleData: AssignUserRoleRequest): Promise<void> => {
     return postRequest<void, AssignUserRoleRequest>('/users/assign-role', roleData)
+  },
+
+  // Export users as Excel file
+  exportUsersAsExcel: async (params?: UserQueryParams): Promise<Blob> => {
+    const searchParams = new URLSearchParams()
+    
+    if (params?.page) searchParams.append('Page', params.page.toString())
+    if (params?.pageSize) searchParams.append('PageSize', params.pageSize.toString())
+    if (params?.sortBy) searchParams.append('SortBy', params.sortBy)
+    if (params?.keyword) searchParams.append('Keyword', params.keyword)
+    if (params?.isAscending !== undefined) searchParams.append('IsAscending', params.isAscending.toString())
+    if (params?.unit) searchParams.append('Unit', params.unit)
+    if (params?.state) searchParams.append('State', params.state)
+
+    const queryString = searchParams.toString()
+    const response = await fetch(`/api/users/export${queryString ? `?${queryString}` : ''}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to export users: ${response.statusText}`)
+    }
+
+    return response.blob()
   }
 }
