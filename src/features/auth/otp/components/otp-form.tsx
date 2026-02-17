@@ -23,21 +23,21 @@ import { authService } from "@/gateway/services"
 
 interface OtpFormProps extends HTMLAttributes<HTMLFormElement> {
   onSuccess?: () => void
-  email?: string
+  memberNo?: string
 }
 
 const formSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
+  memberNo: z.string().min(1, { message: "Please enter your member number" }),
   token: z.string().min(6, { message: "Please enter the 6-digit code" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 })
 
-export function OtpForm({ className, onSuccess, email, ...props }: OtpFormProps) {
+export function OtpForm({ className, onSuccess, memberNo, ...props }: OtpFormProps) {
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: email || "",
+      memberNo: memberNo || "",
       token: "",
       password: "",
     },
@@ -50,7 +50,7 @@ export function OtpForm({ className, onSuccess, email, ...props }: OtpFormProps)
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       await resetPasswordMutation({
-        email: values.email,
+        memberNo: values.memberNo,
         token: values.token,
         password: values.password,
       })
@@ -79,15 +79,15 @@ export function OtpForm({ className, onSuccess, email, ...props }: OtpFormProps)
 
         <FormField
           control={form.control}
-          name="email"
+          name="memberNo"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email Address</FormLabel>
+              <FormLabel>Member Number</FormLabel>
               <FormControl>
                 <div className="relative">
                   <IconShield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input 
-                    placeholder="your.email@example.com" 
+                    placeholder="2222222" 
                     className="pl-10"
                     {...field} 
                   />
