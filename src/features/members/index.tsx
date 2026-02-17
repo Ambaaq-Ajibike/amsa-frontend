@@ -11,7 +11,7 @@ import { UsersPrimaryButtons } from './components/users-primary-buttons'
 import { UsersTable } from './components/users-table'
 import UsersProvider from './context/users-context'
 import { userService } from '@/gateway/services'
-import { exportTableAsCSV } from '@/utils/export-utils'
+import { downloadFileFromEndpoint } from '@/utils/export-utils'
 import { showErrorToast, showSuccessToast } from '@/utils/error-handler'
 
 export default function Users() {
@@ -45,13 +45,11 @@ export default function Users() {
 
   const handleExport = async () => {
     try {
-      if (!data?.items || data.items.length === 0) {
-        showErrorToast('No data to export')
-        return
-      }
-
-      const columns = ['memberNo', 'firstName', 'lastName', 'email', 'phone', 'unit', 'state', 'status']
-      exportTableAsCSV(data.items, columns, 'members')
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://amsa-ng.onrender.com/api/v1'
+      const filename = `members-${new Date().toISOString().split('T')[0]}.xlsx`
+      await downloadFileFromEndpoint(`${apiBaseUrl}/users/export`, filename, {
+        ExportOption: 'excel',
+      })
       showSuccessToast('Members exported successfully')
     } catch (error) {
       showErrorToast('Failed to export members')

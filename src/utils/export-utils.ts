@@ -27,16 +27,41 @@ export async function downloadFileFromEndpoint(
     const queryString = searchParams.toString()
     const url = queryString ? `${endpoint}?${queryString}` : endpoint
 
+    const token = localStorage.getItem('accessToken')
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     })
 
     if (!response.ok) {
       throw new Error(`Failed to download file: ${response.statusText}`)
     }
+
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('application/json') || contentType.includes('text/html')) {
+      const errorText = await response.text()
+      throw new Error(errorText || 'Unexpected response from server')
+    }
+
+    const contentDisposition = response.headers.get('content-disposition') || ''
+    const match = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(contentDisposition)
+    const serverFilename = decodeURIComponent(match?.[1] || match?.[2] || '')
+
+    const inferredExtension = contentType.includes('spreadsheetml')
+      ? 'xlsx'
+      : contentType.includes('application/vnd.ms-excel')
+        ? 'xls'
+        : contentType.includes('text/csv')
+          ? 'csv'
+          : ''
+
+    const finalFilename = serverFilename || (inferredExtension
+      ? filename.replace(/\.[^.]+$/, `.${inferredExtension}`)
+      : filename)
 
     // Get the blob from response
     const blob = await response.blob()
@@ -47,7 +72,7 @@ export async function downloadFileFromEndpoint(
     // Create a temporary anchor element and trigger download
     const anchor = document.createElement('a')
     anchor.href = blobUrl
-    anchor.download = filename
+    anchor.download = finalFilename
     document.body.appendChild(anchor)
     anchor.click()
 
