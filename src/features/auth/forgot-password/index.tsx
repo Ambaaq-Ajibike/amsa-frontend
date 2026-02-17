@@ -19,7 +19,7 @@ export default function ForgotPassword() {
             Forgot Password
           </CardTitle>
           <CardDescription>
-            Enter your registered email and <br /> we will send you a link to
+            Enter your member number and <br /> we will send you a link to
             reset your password.
           </CardDescription>
         </CardHeader>

@@ -29,8 +29,11 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         if (error.response?.status === 401) {
+            // Check if this request should skip auto-redirect
+            const skipAutoRedirect = error.config?.headers?.['X-Skip-Auto-Redirect'] === 'true'
+            
             const refreshToken = localStorage.getItem("refreshToken")
-            if (refreshToken) {
+            if (refreshToken && !skipAutoRedirect) {
                 try {
                     // Attempt token refresh
                     const response = await axios.post(`${BASEURL}/auth/refreshtoken`, {
@@ -52,7 +55,7 @@ api.interceptors.response.use(
                     localStorage.removeItem("scope")
                     window.location.href = '/sign-in'
                 }
-            } else {
+            } else if (!skipAutoRedirect) {
                 // No refresh token, redirect to login
                 window.location.href = '/sign-in'
             }

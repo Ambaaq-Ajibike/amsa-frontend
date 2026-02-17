@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { IconLoader, IconMail } from "@tabler/icons-react"
+import { IconHash, IconLoader } from "@tabler/icons-react"
 import { toast } from "sonner"
 import { authService } from "@/gateway/services"
 
@@ -26,14 +26,14 @@ interface ForgotPasswordFormProps extends HTMLAttributes<HTMLFormElement> {
 }
 
 const formSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
+  memberNo: z.string().min(1, { message: "Please enter your member number" }),
 })
 
 export function ForgotPasswordForm({ className, onSuccess, ...props }: ForgotPasswordFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      memberNo: "",
     },
   })
 
@@ -60,24 +60,18 @@ export function ForgotPasswordForm({ className, onSuccess, ...props }: ForgotPas
         {...props}
       >
         {/* Header */}
-        <div className="flex flex-col space-y-2 text-left mb-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Forgot Password</h1>
-          <p className="text-muted-foreground text-sm">
-            Enter your email address and we'll send you instructions to reset your password.
-          </p>
-        </div>
 
         <FormField
           control={form.control}
-          name="email"
+          name="memberNo"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email Address</FormLabel>
+              <FormLabel>Member Number</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <IconMail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <IconHash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input 
-                    placeholder="your.email@example.com" 
+                    placeholder="2222222" 
                     className="pl-10"
                     {...field} 
                   />

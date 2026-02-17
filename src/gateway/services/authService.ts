@@ -31,6 +31,10 @@ export const authService = {
 
   // Reset password
   resetPassword: async (resetData: ResetPasswordRequest): Promise<void> => {
-    return postRequest<void, ResetPasswordRequest>('/auth/resetpassword', resetData)
+    return postRequest<void, ResetPasswordRequest>('/auth/resetpassword', resetData, {
+      headers: {
+        'X-Skip-Auto-Redirect': 'true',
+      },
+    })
   }
 }
