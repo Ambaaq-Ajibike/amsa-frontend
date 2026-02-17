@@ -34,7 +34,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { IconLoader2 } from "@tabler/icons-react"
 import { userService } from "@/gateway/services"
-import { UserProfile } from "@/gateway/types/api"
+import { UpdateUserProfileRequest, UserProfile } from "@/gateway/types/api"
 import { showSuccessToast, showErrorToast } from "@/utils/error-handler"
 
 // Backend response type that matches the actual API response
@@ -100,24 +100,33 @@ export default function ProfileForm() {
       graduationYear: undefined,
     },
   })
-  const { data, isLoading, error } = useQuery<UserProfile>({
+  const { data: profile, isLoading, error } = useQuery<UserProfile>({
     queryKey: ["user-profile"],
     queryFn: () => userService.getProfile(),
   })
 
   const { mutateAsync: updateProfile, isPending: isUpdating } = useMutation({
     mutationFn: (profileData: ProfileFormValues) => {
-      return userService.updateProfile({
+      if (!profile?.id) {
+        throw new Error("User profile is missing an id.")
+      }
+
+      const payload: UpdateUserProfileRequest = {
+        userId: profile.id,
         firstName: profileData.firstName,
         lastName: profileData.lastName,
         email: profileData.email,
         phone: profileData.phoneNumber,
-        dateOfBirth: profileData.dob.toISOString(),
+        unit: profileData.unit || profile.unit || "",
+        state: profile.state || "",
+        dob: profileData.dob.toISOString(),
+        cgpa: profileData.cgpa,
         courseField: profileData.courseField,
         exchangeProgramInterest: profileData.exchangeProgramInterest,
-        cgpa: profileData.cgpa,
         graduationYear: profileData.graduationYear,
-      })
+      }
+
+      return userService.updateProfile(profile.id, payload)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-profile"] })
@@ -130,8 +139,8 @@ export default function ProfileForm() {
   })
 
   useEffect(() => {
-    if (data) {
-      const backendData = data as unknown as BackendUserProfile
+    if (profile) {
+      const backendData = profile as unknown as BackendUserProfile
       form.reset({
         memberNumber: backendData.memberNo || "",
         firstName: backendData.firstName || "",
@@ -147,7 +156,7 @@ export default function ProfileForm() {
         graduationYear: (backendData as any).graduationYear || undefined,
       })
     }
-  }, [data, form])
+  }, [profile, form])
 
   if (isLoading) return <div className='flex h-svh items-center justify-center'>
     <IconLoader2 className='size-8 animate-spin' />

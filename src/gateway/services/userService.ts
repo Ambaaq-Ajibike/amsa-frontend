@@ -3,6 +3,7 @@ import type {
   CreateUserRequest,
   User,
   UserProfile,
+  UpdateUserProfileRequest,
   AssignUserRoleRequest,
   UserQueryParams,
   PaginatedResponse
@@ -16,8 +17,8 @@ export const userService = {
   },
 
   // Update user profile
-  updateProfile: async (profileData: Partial<UserProfile>): Promise<UserProfile> => {
-    return putRequest<UserProfile, Partial<UserProfile>>('/users/profile', profileData)
+  updateProfile: async (userId: string, profileData: UpdateUserProfileRequest): Promise<UserProfile> => {
+    return putRequest<UserProfile, UpdateUserProfileRequest>(`/users/${userId}`, profileData)
   },
 
   // Get user by ID

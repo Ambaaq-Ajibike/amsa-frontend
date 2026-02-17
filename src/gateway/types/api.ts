@@ -42,11 +42,11 @@ export interface ChangePasswordRequest {
 }
 
 export interface ForgotPasswordRequest {
-  email: string
+  memberNo: string
 }
 
 export interface ResetPasswordRequest {
-  email: string
+  memberNo: string
   token: string
   password: string
 }
@@ -102,6 +102,21 @@ export interface UserProfile {
   courseField?: string
   exchangeProgramInterest?: boolean
   cgpa?: number
+  graduationYear?: number
+}
+
+export interface UpdateUserProfileRequest {
+  userId: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  unit: string
+  state: string
+  dob: string
+  cgpa?: number
+  courseField?: string
+  exchangeProgramInterest?: boolean
   graduationYear?: number
 }
 
