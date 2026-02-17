@@ -1,7 +1,6 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-
 import { useSearch } from '@tanstack/react-router'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -14,6 +13,8 @@ import { ParticipantsTable } from './components/participants-table'
 import UsersProvider from './context/users-context'
 import { eventService } from '@/gateway/services'
 import { useState } from 'react'
+import { downloadFileFromEndpoint } from '@/utils/export-utils'
+import { showErrorToast, showSuccessToast } from '@/utils/error-handler'
 
 
 
@@ -40,6 +41,26 @@ export default function EventParticipants() {
     queryFn: () => getParticipants(event!, page, pageSize, isPresent),
     enabled: !!event, // only run if eventId exists
   })
+
+  const handleExport = async () => {
+    try {
+      if (!event) {
+        showErrorToast('Event ID is missing')
+        return
+      }
+
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://amsa-ng.onrender.com/api/v1'
+      const filename = `event-participants-${event}-${new Date().toISOString().split('T')[0]}.xlsx`
+      await downloadFileFromEndpoint(`${apiBaseUrl}/events/export`, filename, {
+        EventId: event,
+        IsPresent: isPresent === true,
+        ExportOption: 'excel',
+      })
+      showSuccessToast('Event participants exported successfully')
+    } catch (error) {
+      showErrorToast('Failed to export event participants')
+    }
+  }
 
   // Event data - you might need to fetch this separately or pass it as a prop
   const eventData = {
@@ -89,6 +110,7 @@ export default function EventParticipants() {
             isLoading={isLoading}
             isPresent={isPresent}
             onIsPresentChange={setIsPresent}
+            onExport={handleExport}
           />
         </div>
       </Main>

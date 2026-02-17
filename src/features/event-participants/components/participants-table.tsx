@@ -44,6 +44,7 @@ interface DataTableProps {
   isLoading?: boolean
   isPresent?: boolean | null
   onIsPresentChange?: (value: boolean | null) => void
+  onExport?: () => void
 }
 
 export function ParticipantsTable({ 
@@ -57,6 +58,7 @@ export function ParticipantsTable({
   isLoading,
   isPresent,
   onIsPresentChange,
+  onExport,
 }: DataTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -101,6 +103,7 @@ export function ParticipantsTable({
         table={table} 
         isPresent={isPresent}
         onIsPresentChange={onIsPresentChange}
+        onExport={onExport}
       />
       <div className='rounded-md border'>
         <Table>
