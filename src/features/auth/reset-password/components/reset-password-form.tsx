@@ -82,7 +82,9 @@ export function ResetPasswordForm({
     try {
       await resetPasswordMutation({
         memberNo: values.memberNo,
+
         token: decodeURIComponent(values.token),
+        
         password: values.password,
       })
     } catch (err: unknown) {
