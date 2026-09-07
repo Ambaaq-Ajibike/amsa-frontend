@@ -38,7 +38,6 @@ import { SelectDropdown } from "@/components/select-dropdown"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { IconLoader } from "@tabler/icons-react"
 import { showSuccessToast, showErrorToast } from "@/utils/error-handler"
-import { Checkbox } from "@/components/ui/checkbox"
 
 interface SignUpFormProps extends HTMLAttributes<HTMLFormElement> {
   onSuccess?: () => void
@@ -55,9 +54,6 @@ const formSchema = z.object({
   phone: z.string().min(7, { message: "Phone required" }),
   level: z.string().optional(),
   dob: z.date({ required_error: "Date of birth required" }),
-  courseField: z.string().optional(),
-  exchangeProgramInterest: z.boolean().optional(),
-  cgpa: z.number().min(0).max(5).optional(),
   graduationYear: z.number().min(2000).max(2100).optional(),
 })
 
@@ -84,9 +80,6 @@ async function createUser(data: FormValues) {
     phone: data.phone,
     level: data.level === "none" ? "" : data.level || "",
     dob: data.dob.toISOString(),
-    courseField: data.courseField,
-    exchangeProgramInterest: data.exchangeProgramInterest,
-    cgpa: data.cgpa,
     graduationYear: data.graduationYear,
   }
   return userService.createUser(payload)
@@ -108,9 +101,6 @@ export function SignUpForm({ className, onSuccess, ...props }: SignUpFormProps) 
       phone: "",
       level: "none",
       dob: undefined,
-      courseField: "",
-      exchangeProgramInterest: false,
-      cgpa: undefined,
       graduationYear: undefined,
     },
   })
@@ -471,43 +461,6 @@ export function SignUpForm({ className, onSuccess, ...props }: SignUpFormProps) 
 
             <FormField
               control={form.control}
-              name='courseField'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Course/Career Field (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder='Medicine, Engineering, etc.' {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='cgpa'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CGPA (Optional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder='0.00' 
-                      type='number'
-                      step='0.01'
-                      min='0'
-                      max='5'
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                      value={field.value ?? ''}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name='graduationYear'
               render={({ field }) => (
                 <FormItem>
@@ -524,24 +477,6 @@ export function SignUpForm({ className, onSuccess, ...props }: SignUpFormProps) 
                     />
                   </FormControl>
                   <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='exchangeProgramInterest'
-              render={({ field }) => (
-                <FormItem className='flex flex-row items-center space-x-3 space-y-0'>
-                  <FormControl>
-                    <Checkbox 
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormLabel className='cursor-pointer'>
-                    Interested in Exchange Program
-                  </FormLabel>
                 </FormItem>
               )}
             />
