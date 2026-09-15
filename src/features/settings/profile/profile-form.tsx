@@ -33,7 +33,8 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { IconLoader2 } from "@tabler/icons-react"
-import { userService } from "@/gateway/services"
+import { SelectDropdown } from "@/components/select-dropdown"
+import { userService, utilityService } from "@/gateway/services"
 import { UpdateUserProfileRequest, UserProfile } from "@/gateway/types/api"
 import { showSuccessToast, showErrorToast } from "@/utils/error-handler"
 
@@ -105,6 +106,17 @@ export default function ProfileForm() {
     queryFn: () => userService.getProfile(),
   })
 
+  const {
+    data: units = [],
+    isLoading: loadingUnits,
+  } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const res = await utilityService.getUnits()
+      return res.map((u) => ({ label: u.name, value: u.code }))
+    },
+  })
+
   const { mutateAsync: updateProfile, isPending: isUpdating } = useMutation({
     mutationFn: (profileData: ProfileFormValues) => {
       if (!profile?.id) {
@@ -141,6 +153,10 @@ export default function ProfileForm() {
   useEffect(() => {
     if (profile) {
       const backendData = profile as unknown as BackendUserProfile
+      const backendUnit = backendData.unit || ""
+      const matchedUnit = units.find(
+        (u) => u.value === backendUnit || u.label === backendUnit
+      )
       form.reset({
         memberNumber: backendData.memberNo || "",
         firstName: backendData.firstName || "",
@@ -148,7 +164,7 @@ export default function ProfileForm() {
         email: backendData.email || "",
         phoneNumber: backendData.phone || "",
         dob: backendData.dob ? new Date(backendData.dob) : undefined,
-        unit: backendData.unit || "",
+        unit: matchedUnit?.value ?? "",
         level: "none", // No level field in backend response
         courseField: (backendData as any).courseField || "",
         exchangeProgramInterest: (backendData as any).exchangeProgramInterest || false,
@@ -156,7 +172,7 @@ export default function ProfileForm() {
         graduationYear: (backendData as any).graduationYear || undefined,
       })
     }
-  }, [profile, form])
+  }, [profile, form, units])
 
   if (isLoading) return <div className='flex h-svh items-center justify-center'>
     <IconLoader2 className='size-8 animate-spin' />
@@ -288,16 +304,17 @@ export default function ProfileForm() {
           control={form.control}
           name="unit"
           render={({ field }) => (
-            <FormItem className="flex flex-col w-full">
+            <FormItem className="flex flex-col w-full min-w-0">
               <FormLabel>Unit</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Unit" 
-                  {...field} 
-                  readOnly 
-                  className="bg-muted cursor-not-allowed"
-                />
-              </FormControl>
+              <SelectDropdown
+                defaultValue={field.value}
+                onValueChange={field.onChange}
+                items={units}
+                placeholder={loadingUnits ? "Loading units..." : "Select a unit"}
+                className="w-full"
+                isControlled
+                isPending={loadingUnits}
+              />
               <FormMessage />
             </FormItem>
           )}
