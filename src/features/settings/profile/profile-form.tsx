@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -33,7 +33,6 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { IconLoader2 } from "@tabler/icons-react"
-import { SelectDropdown } from "@/components/select-dropdown"
 import { userService, utilityService } from "@/gateway/services"
 import { UpdateUserProfileRequest, UserProfile } from "@/gateway/types/api"
 import { showSuccessToast, showErrorToast } from "@/utils/error-handler"
@@ -50,6 +49,11 @@ interface BackendUserProfile {
   phone: string
   state: string
   status: string
+  level?: string
+  courseField?: string
+  cgpa?: number
+  graduationYear?: number
+  exchangeProgramInterest?: boolean
   userRoles: Array<{
     roleId: string
     role: {
@@ -117,6 +121,28 @@ export default function ProfileForm() {
     },
   })
 
+  const watchedUnit = form.watch("unit")
+
+  // Ensure current/profile unit is always in the list so Radix Select can display it (fixes "Select a unit" placeholder)
+  const effectiveUnits = useMemo(() => {
+    const raws = new Set<string>()
+    const profileRaw = (profile as unknown as Record<string, unknown>)?.unit as string | undefined
+    if (profileRaw?.toString().trim()) raws.add(profileRaw.toString().trim())
+    if (watchedUnit?.toString().trim()) raws.add(watchedUnit.toString().trim())
+    if (raws.size === 0) return units
+    if (units.length === 0) return Array.from(raws).map((r) => ({ label: r, value: r }))
+    let result = [...units]
+    for (const raw of raws) {
+      const exists =
+        result.some((u) => u.value === raw) ||
+        result.some((u) => u.label === raw) ||
+        result.some((u) => u.value.toLowerCase() === raw.toLowerCase()) ||
+        result.some((u) => u.label.toLowerCase() === raw.toLowerCase())
+      if (!exists) result = [...result, { label: raw, value: raw }]
+    }
+    return result
+  }, [units, profile, watchedUnit])
+
   const { mutateAsync: updateProfile, isPending: isUpdating } = useMutation({
     mutationFn: (profileData: ProfileFormValues) => {
       if (!profile?.id) {
@@ -132,6 +158,7 @@ export default function ProfileForm() {
         unit: profileData.unit || profile.unit || "",
         state: profile.state || "",
         dob: profileData.dob.toISOString(),
+        level: profileData.level === "none" ? "" : profileData.level || "",
         cgpa: profileData.cgpa,
         courseField: profileData.courseField,
         exchangeProgramInterest: profileData.exchangeProgramInterest,
@@ -153,10 +180,11 @@ export default function ProfileForm() {
   useEffect(() => {
     if (profile) {
       const backendData = profile as unknown as BackendUserProfile
-      const backendUnit = backendData.unit || ""
-      const matchedUnit = units.find(
-        (u) => u.value === backendUnit || u.label === backendUnit
-      )
+      const rawProfile = profile as unknown as Record<string, unknown>
+      const backendUnitRaw = (backendData.unit || (rawProfile.unit as string) || "").toString().trim()
+      const backendLevelRaw = (backendData.level ?? (rawProfile.level as string) ?? "") as string
+      const backendLevel = backendLevelRaw && backendLevelRaw.toString().trim() !== "" ? backendLevelRaw.toString() : "none"
+
       form.reset({
         memberNumber: backendData.memberNo || "",
         firstName: backendData.firstName || "",
@@ -164,17 +192,51 @@ export default function ProfileForm() {
         email: backendData.email || "",
         phoneNumber: backendData.phone || "",
         dob: backendData.dob ? new Date(backendData.dob) : undefined,
-        unit: matchedUnit?.value ?? "",
-        level: "none", // No level field in backend response
-        courseField: (backendData as any).courseField || "",
-        exchangeProgramInterest: (backendData as any).exchangeProgramInterest || false,
-        cgpa: (backendData as any).cgpa || undefined,
-        graduationYear: (backendData as any).graduationYear || undefined,
+        unit: backendUnitRaw,
+        level: backendLevel,
+        courseField: (backendData.courseField || (rawProfile.courseField as string) || "") as string,
+        exchangeProgramInterest: (backendData.exchangeProgramInterest ?? (rawProfile.exchangeProgramInterest as boolean) ?? false) as boolean,
+        cgpa: (backendData.cgpa ?? (rawProfile.cgpa as number) ?? undefined) as number | undefined,
+        graduationYear: (backendData.graduationYear ?? (rawProfile.graduationYear as number) ?? undefined) as number | undefined,
       })
     }
-  }, [profile, form, units])
+  }, [profile, form])
 
-  if (isLoading) return <div className='flex h-svh items-center justify-center'>
+  // After units load, ensure the saved unit is mapped to a valid select value (code) so it displays
+  useEffect(() => {
+    if (!profile || units.length === 0) return
+    const backendData = profile as unknown as BackendUserProfile
+    const rawProfile = profile as unknown as Record<string, unknown>
+    const backendUnitRaw = (backendData.unit || (rawProfile.unit as string) || "").toString().trim()
+    if (!backendUnitRaw) return
+
+    const currentUnit = form.getValues("unit")
+    // If current value already corresponds to a valid item value, nothing to do
+    if (units.some((u) => u.value === currentUnit)) return
+
+    let resolved = backendUnitRaw
+    const byValue = units.find((u) => u.value === backendUnitRaw)
+    if (byValue) resolved = byValue.value
+    else {
+      const byLabel = units.find((u) => u.label === backendUnitRaw)
+      if (byLabel) resolved = byLabel.value
+      else {
+        const lower = backendUnitRaw.toLowerCase()
+        const byValueCI = units.find((u) => u.value.toLowerCase() === lower)
+        if (byValueCI) resolved = byValueCI.value
+        else {
+          const byLabelCI = units.find((u) => u.label.toLowerCase() === lower)
+          if (byLabelCI) resolved = byLabelCI.value
+        }
+      }
+    }
+
+    if (resolved !== currentUnit) {
+      form.setValue("unit", resolved, { shouldValidate: true })
+    }
+  }, [profile, units, form])
+
+  if (isLoading) return <div className='flex flex-1 min-h-[40vh] items-center justify-center'>
     <IconLoader2 className='size-8 animate-spin' />
   </div>
   if (error) return <p>Failed to load user</p>
@@ -306,15 +368,34 @@ export default function ProfileForm() {
           render={({ field }) => (
             <FormItem className="flex flex-col w-full min-w-0">
               <FormLabel>Unit</FormLabel>
-              <SelectDropdown
-                defaultValue={field.value}
+              {/* key forces Radix to remount when saved value / list changes so placeholder doesn't stick */}
+              <Select
+                key={`${field.value}-${effectiveUnits.length}-${loadingUnits ? "loading" : "ready"}`}
+                value={field.value}
                 onValueChange={field.onChange}
-                items={units}
-                placeholder={loadingUnits ? "Loading units..." : "Select a unit"}
-                className="w-full"
-                isControlled
-                isPending={loadingUnits}
-              />
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={loadingUnits ? "Loading units..." : "Select a unit"} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                  {loadingUnits ? (
+                    <SelectItem disabled value="loading" className="h-14">
+                      <div className="flex items-center justify-center gap-2">
+                        <IconLoader2 className="h-5 w-5 animate-spin" />
+                        Loading...
+                      </div>
+                    </SelectItem>
+                  ) : (
+                    effectiveUnits.map(({ label, value }) => (
+                      <SelectItem key={value} value={value} className="break-words">
+                        {label}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

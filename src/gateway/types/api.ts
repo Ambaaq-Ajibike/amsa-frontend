@@ -80,6 +80,7 @@ export interface User {
   dateOfBirth: string
   roles: string[]
   status: string
+  level?: string
   courseField?: string
   exchangeProgramInterest?: boolean
   cgpa?: number
@@ -99,6 +100,7 @@ export interface UserProfile {
   state: string
   dateOfBirth: string
   roles: string[]
+  level?: string
   courseField?: string
   exchangeProgramInterest?: boolean
   cgpa?: number
@@ -114,6 +116,7 @@ export interface UpdateUserProfileRequest {
   unit: string
   state: string
   dob: string
+  level?: string
   cgpa?: number
   courseField?: string
   exchangeProgramInterest?: boolean
