@@ -6,6 +6,7 @@ import { Camera, Check, LoaderCircle, ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { toast } from 'sonner'
 import { eventService } from '@/gateway/services'
 import type { QrScanResult } from '@/gateway/types/api'
 
@@ -46,9 +47,11 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
       setResult(scanned)
       onScanned()
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : 'The QR code could not be processed.'
+      const responseData = (cause as { response?: { data?: { detail?: string; message?: string } } })?.response?.data
+      const message = responseData?.detail || responseData?.message || (cause instanceof Error ? cause.message : 'The QR code could not be processed.')
       setError(message)
       setScanStatus('QR detected, but the event service could not accept it. You can try again.')
+      toast.error(message)
       processingRef.current = false
     } finally {
       setIsSubmitting(false)
