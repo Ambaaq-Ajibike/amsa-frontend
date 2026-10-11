@@ -31,6 +31,7 @@ import { Route as AuthenticatedMembersIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events/index'
 import { Route as AuthenticatedEventParticipantsIndexRouteImport } from './routes/_authenticated/event-participants/index'
+import { Route as AuthenticatedEventMealsIndexRouteImport } from './routes/_authenticated/event-meals/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
@@ -154,6 +155,12 @@ const AuthenticatedEventParticipantsIndexRoute =
     path: '/event-participants/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEventMealsIndexRoute =
+  AuthenticatedEventMealsIndexRouteImport.update({
+    id: '/event-meals/',
+    path: '/event-meals/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
   id: '/chats/',
   path: '/chats/',
@@ -230,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/event-meals': typeof AuthenticatedEventMealsIndexRoute
   '/event-participants': typeof AuthenticatedEventParticipantsIndexRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
@@ -259,6 +267,7 @@ export interface FileRoutesByTo {
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/event-meals': typeof AuthenticatedEventMealsIndexRoute
   '/event-participants': typeof AuthenticatedEventParticipantsIndexRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
@@ -293,6 +302,7 @@ export interface FileRoutesById {
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
+  '/_authenticated/event-meals/': typeof AuthenticatedEventMealsIndexRoute
   '/_authenticated/event-participants/': typeof AuthenticatedEventParticipantsIndexRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/clerk/user-management'
     | '/apps'
     | '/chats'
+    | '/event-meals'
     | '/event-participants'
     | '/events'
     | '/help-center'
@@ -355,6 +366,7 @@ export interface FileRouteTypes {
     | '/clerk/user-management'
     | '/apps'
     | '/chats'
+    | '/event-meals'
     | '/event-participants'
     | '/events'
     | '/help-center'
@@ -388,6 +400,7 @@ export interface FileRouteTypes {
     | '/clerk/_authenticated/user-management'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
+    | '/_authenticated/event-meals/'
     | '/_authenticated/event-participants/'
     | '/_authenticated/events/'
     | '/_authenticated/help-center/'
@@ -567,6 +580,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventParticipantsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/event-meals/': {
+      id: '/_authenticated/event-meals/'
+      path: '/event-meals'
+      fullPath: '/event-meals'
+      preLoaderRoute: typeof AuthenticatedEventMealsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/chats/': {
       id: '/_authenticated/chats/'
       path: '/chats'
@@ -661,6 +681,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
+  AuthenticatedEventMealsIndexRoute: typeof AuthenticatedEventMealsIndexRoute
   AuthenticatedEventParticipantsIndexRoute: typeof AuthenticatedEventParticipantsIndexRoute
   AuthenticatedEventsIndexRoute: typeof AuthenticatedEventsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
@@ -672,6 +693,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
+  AuthenticatedEventMealsIndexRoute: AuthenticatedEventMealsIndexRoute,
   AuthenticatedEventParticipantsIndexRoute:
     AuthenticatedEventParticipantsIndexRoute,
   AuthenticatedEventsIndexRoute: AuthenticatedEventsIndexRoute,

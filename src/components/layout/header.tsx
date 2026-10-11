@@ -17,15 +17,17 @@ export const Header = ({
   const [offset, setOffset] = React.useState(0)
 
   React.useEffect(() => {
-    const onScroll = () => {
-      setOffset(document.body.scrollTop || document.documentElement.scrollTop)
+    const onScroll = (event: Event) => {
+      const target = event.target
+      const scrollTop = target instanceof HTMLElement ? target.scrollTop : 0
+      setOffset(scrollTop || document.body.scrollTop || document.documentElement.scrollTop)
     }
 
     // Add scroll listener to the body
-    document.addEventListener('scroll', onScroll, { passive: true })
+    document.addEventListener('scroll', onScroll, { passive: true, capture: true })
 
     // Clean up the event listener on unmount
-    return () => document.removeEventListener('scroll', onScroll)
+    return () => document.removeEventListener('scroll', onScroll, true)
   }, [])
 
   return (

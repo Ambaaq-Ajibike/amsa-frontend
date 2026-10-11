@@ -124,14 +124,6 @@ export const createColumns = (eventId: string): ColumnDef<Participants>[] => [
     ),
   },
   {
-    accessorKey: 'phoneNumber',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Phone Number' />
-    ),
-    cell: ({ row }) => <div>{row.getValue('phoneNumber')}</div>,
-    enableSorting: false,
-  },
-  {
     accessorKey: 'unit',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Unit' />

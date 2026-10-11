@@ -3,10 +3,10 @@ import {
   IconChecklist,
   IconLayoutDashboard,
   IconPackages,
-  IconSettings,
   IconUserCog,
   IconUsers,
 } from '@tabler/icons-react'
+import { Bell, ClipboardCheck, Monitor, Palette, Settings2, Utensils } from 'lucide-react'
 import { type SidebarData } from '../types'
 import { PERMISSIONS, ROLES } from '@/lib/permissions'
 
@@ -58,6 +58,19 @@ export function getSidebarData(permissions: string[] = [], roles: string[] = [])
       url: '/events' as const,
       icon: IconChecklist,
     })
+    generalItems.push({
+      title: 'Event Participants',
+      url: '/event-participants' as const,
+      icon: ClipboardCheck,
+    })
+  }
+
+  if (permissions.includes(PERMISSIONS.CAN_CREATE_EVENT) || permissions.includes(PERMISSIONS.CAN_SCAN_MEALS)) {
+    generalItems.push({
+      title: 'Event Meals',
+      url: '/event-meals' as const,
+      icon: Utensils,
+    })
   }
 
   // Only show Apps for Admin or Tajneed roles
@@ -75,23 +88,33 @@ export function getSidebarData(permissions: string[] = [], roles: string[] = [])
       items: generalItems,
     },
     {
-      title: 'Other',
+      title: 'Settings',
+      icon: Settings2,
       items: [
         {
-          title: 'Settings',
-          icon: IconSettings,
-          items: [
-            {
-              title: 'Profile',
-              url: '/settings' as const,
-              icon: IconUserCog,
-            },
-            {
-              title: 'Events',
-              url: '/settings/events' as const,
-              icon: IconCalendar,
-            },
-          ],
+          title: 'Profile',
+          url: '/settings' as const,
+          icon: IconUserCog,
+        },
+        {
+          title: 'Events',
+          url: '/settings/events' as const,
+          icon: IconCalendar,
+        },
+        {
+          title: 'Appearance',
+          url: '/settings/appearance' as const,
+          icon: Palette,
+        },
+        {
+          title: 'Notifications',
+          url: '/settings/notifications' as const,
+          icon: Bell,
+        },
+        {
+          title: 'Display',
+          url: '/settings/display' as const,
+          icon: Monitor,
         },
       ],
     },

@@ -8,6 +8,7 @@ export const PERMISSIONS = {
   CAN_ASSIGN_ROLE: 'CanAssignRole',
   CAN_CREATE_EVENT: 'CanCreateEvent',
   CAN_CHECK_IN_EVENT: 'CanCheckInEvent',
+  CAN_SCAN_MEALS: 'CanScanMeals',
 } as const
 
 /**

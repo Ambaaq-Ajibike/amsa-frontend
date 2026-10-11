@@ -5,9 +5,9 @@ export default function SettingsProfile() {
   return (
     <ContentSection
       title='Profile'
-      desc='This is your profile on AMSA portal. You can update your personal information here.'
+      desc='Update your contact and academic details.'
     >
-      <ProfileForm />
+      <div className='max-w-4xl'><ProfileForm /></div>
     </ContentSection>
   )
 }

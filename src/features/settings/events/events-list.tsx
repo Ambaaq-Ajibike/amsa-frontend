@@ -1,54 +1,38 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { eventService } from '@/gateway/services'
-import { showSuccessToast, showErrorToast } from '@/utils/error-handler'
-import { IconLoader2, IconCalendar, IconClock } from '@tabler/icons-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
+import { CalendarDays, Check, Clock3, LoaderCircle, UsersRound } from 'lucide-react'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { eventService } from '@/gateway/services'
+import { showErrorToast, showSuccessToast } from '@/utils/error-handler'
 import type { Event } from '@/gateway/types/api'
-
-
-
-async function getAllEvents() {
-  // Get all events from the /events/all endpoint
-  return await eventService.getAllEvents()
-}
-
-
-async function registerEvent(eventId: string) {
-  return eventService.registerForEvent(eventId)
-}
 
 export function EventsList() {
   const queryClient = useQueryClient()
   const [registeringId, setRegisteringId] = useState<string | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
 
-  const { data: events, isLoading: eventsLoading, isError: eventsError } = useQuery({
+  const { data: events, isLoading, isError } = useQuery({
     queryKey: ['all-events'],
-    queryFn: getAllEvents,
+    queryFn: () => eventService.getAllEvents(),
   })
-
-  // Get user's registered events to check registration status
-  const { data: userRegisteredEvents } = useQuery({
+  const { data: registeredEvents } = useQuery({
     queryKey: ['user-registered-events'],
     queryFn: () => eventService.getUserRegisteredEvents(),
   })
-
-  const { mutate: registerMutation } = useMutation({
-    mutationFn: registerEvent,
-    onSuccess: (data: unknown) => {
-      const message = (data as { message?: string })?.message || 'Event Registration Successful!'
-      showSuccessToast(message)
+  const register = useMutation({
+    mutationFn: (eventId: string) => eventService.registerForEvent(eventId),
+    onSuccess: () => {
+      showSuccessToast('Event registration successful')
       setRegisteringId(null)
       setSelectedEvent(null)
-      queryClient.invalidateQueries({ queryKey: ['all-events'] })
-      queryClient.invalidateQueries({ queryKey: ['user-registered-events'] })
+      void queryClient.invalidateQueries({ queryKey: ['all-events'] })
+      void queryClient.invalidateQueries({ queryKey: ['user-registered-events'] })
     },
     onError: (error: unknown) => {
       showErrorToast(error)
@@ -57,167 +41,71 @@ export function EventsList() {
     },
   })
 
-  const isLoading = eventsLoading
+  if (isLoading) return <div className="flex h-36 items-center justify-center text-muted-foreground"><LoaderCircle className="size-6 animate-spin" /></div>
+  if (isError) return <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">Events could not be loaded. Please try again.</p>
+  if (!events?.length) return <div className="rounded-xl border border-dashed p-10 text-center"><CalendarDays className="mx-auto size-8 text-muted-foreground" /><h3 className="mt-3 font-semibold">No events yet</h3><p className="mt-1 text-sm text-muted-foreground">New AMSA events will appear here.</p></div>
 
-  if (isLoading) {
-    return (
-      <div className='flex h-32 items-center justify-center'>
-        <IconLoader2 className='size-8 animate-spin' />
-      </div>
-    )
-  }
-
-  if (eventsError) {
-    return <p className='text-red-500'>Failed to load events</p>
-  }
-
-  // Check if user is registered for a specific event
-  const isUserRegistered = (eventId: string) => {
-    if (!userRegisteredEvents) return false
-    return userRegisteredEvents.some(event => event.id === eventId)
-  }
-
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'upcoming':
-        return 'bg-blue-100 text-blue-800'
-      case 'ongoing':
-        return 'bg-green-100 text-green-800'
-      case 'completed':
-        return 'bg-gray-100 text-gray-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const handleRegister = (event: Event) => {
-    setSelectedEvent(event)
-  }
-
-  const confirmRegistration = () => {
-    if (selectedEvent) {
-      setRegisteringId(selectedEvent.id)
-      registerMutation(selectedEvent.id)
-    }
+  const registeredIds = new Set(registeredEvents?.map((event) => event.id))
+  const statusClass = (status: string) => {
+    if (status === 'upcoming') return 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-200'
+    if (status === 'ongoing') return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200'
+    return 'border-muted bg-muted text-muted-foreground'
   }
 
   return (
-    <div className='space-y-6'>
-      <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
-        {events?.map((event) => {
-          const isRegistered = isUserRegistered(event.id)
-          
-          return (
-            <Card key={event.id} className='group hover:shadow-xl transition-all duration-300 border-0 shadow-lg overflow-hidden bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800'>
-              {/* Event Image */}
-              {event.images && event.images.length > 0 && (
-                <div className='relative h-48 overflow-hidden'>
-                  <img
-                    src={event.images[0]}
-                    alt={event.title}
-                    className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder-image.png'
-                    }}
-                  />
-                  <div className='absolute top-3 right-3'>
-                    <Badge className={`${getStatusColor(event.status)} shadow-lg backdrop-blur-sm border-0`}>
-                      {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-                    </Badge>
-                  </div>
-                  <div className='absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300' />
-                </div>
-              )}
-              
-              <CardHeader className='pb-3'>
-                <div className='space-y-2'>
-                  <CardTitle className='text-xl font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2'>
-                    {event.title}
-                  </CardTitle>
-                  <CardDescription className='line-clamp-3 text-sm leading-relaxed text-muted-foreground'>
-                    {event.description || 'No description available'}
-                  </CardDescription>
-                </div>
-              </CardHeader>
-              
-              <CardContent className='pt-0 space-y-4'>
-                {/* Event Details */}
-                <div className='space-y-3'>
-                  <div className='flex items-center gap-3 text-sm'>
-                    <div className='flex items-center gap-2 text-muted-foreground'>
-                      <IconCalendar className='h-4 w-4 text-primary' />
-                      <span className='font-medium'>{format(new Date(event.startDate), 'MMM d, yyyy')}</span>
-                    </div>
-                  </div>
-                  <div className='flex items-center gap-3 text-sm'>
-                    <div className='flex items-center gap-2 text-muted-foreground'>
-                      <IconClock className='h-4 w-4 text-primary' />
-                      <span className='font-medium'>
-                        {format(new Date(event.startDate), 'h:mm a')} - {format(new Date(event.endDate), 'h:mm a')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+    <div className="space-y-3">
+      {events.map((event) => {
+        const isRegistered = registeredIds.has(event.id)
+        const canRegister = event.status === 'upcoming' || event.status === 'ongoing'
+        const startsAt = new Date(event.startDate)
+        const endsAt = new Date(event.endDate)
 
-                {/* Action Button */}
-                <div className='pt-2'>
-                  {isRegistered ? (
-                    <Button variant='outline' className='w-full bg-green-50 text-green-700 border-green-200 hover:bg-green-100' disabled>
-                      ✓ Registered
-                    </Button>
-                  ) : (event.status === 'upcoming' || event.status === 'ongoing') ? (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          className='w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300'
-                          onClick={() => handleRegister(event)}
-                        >
-                          Register Now
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Confirm Event Registration</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to register for "{selectedEvent?.title}"? 
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={confirmRegistration}
-                            disabled={registeringId === selectedEvent?.id}
-                          >
-                            {registeringId === selectedEvent?.id ? (
-                              <IconLoader2 className='size-4 animate-spin mr-2' />
-                            ) : null}
-                            Confirm Registration
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  ) : (
-                    <Button variant='outline' className='w-full bg-gray-50 text-gray-500 border-gray-200' disabled>
-                      Registration Closed
-                    </Button>
-                  )}
+        return (
+          <Card key={event.id} className="gap-0 overflow-hidden rounded-xl py-0 shadow-none transition-colors hover:border-primary/30">
+            <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-5">
+              <div className="flex shrink-0 items-center gap-3 sm:w-28 sm:flex-col sm:items-start sm:gap-2">
+                <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-lg bg-primary/10 text-primary sm:size-14">
+                  <span className="text-[10px] font-bold uppercase tracking-wider">{format(startsAt, 'MMM')}</span>
+                  <span className="text-lg font-bold leading-none">{format(startsAt, 'd')}</span>
                 </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+                <Badge variant="outline" className={`capitalize ${statusClass(event.status)}`}>{event.status}</Badge>
+              </div>
 
-      {events?.length === 0 && (
-        <div className='text-center py-12'>
-          <div className='mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4'>
-            <IconCalendar className='w-12 h-12 text-muted-foreground' />
-          </div>
-          <h3 className='text-lg font-semibold text-muted-foreground mb-2'>No events available</h3>
-          <p className='text-muted-foreground'>Check back later for upcoming events.</p>
-        </div>
-      )}
+              <div className="flex min-w-0 flex-1 items-center gap-4">
+                {event.images?.[0] && <img src={event.images[0]} alt="" className="hidden size-16 shrink-0 rounded-lg object-cover sm:block" />}
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-base font-semibold tracking-tight sm:text-lg">{event.title}</h3>
+                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{event.description || 'Join the AMSA community for this event.'}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5"><CalendarDays className="size-3.5" />{format(startsAt, 'EEEE, MMM d, yyyy')}</span>
+                    <span className="inline-flex items-center gap-1.5"><Clock3 className="size-3.5" />{format(startsAt, 'h:mm a')} – {format(endsAt, 'h:mm a')}</span>
+                    <span className="inline-flex items-center gap-1.5"><UsersRound className="size-3.5" />{event.registeredUsersCount} registered</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="sm:ml-auto sm:w-36 sm:shrink-0">
+                {isRegistered ? (
+                  <Button variant="outline" className="w-full" disabled><Check className="mr-2 size-4" />Registered</Button>
+                ) : canRegister ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild><Button className="w-full" onClick={() => setSelectedEvent(event)}>Register</Button></AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader><AlertDialogTitle>Register for this event?</AlertDialogTitle><AlertDialogDescription>Confirm your registration for {selectedEvent?.title ?? event.title}.</AlertDialogDescription></AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setSelectedEvent(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction disabled={register.isPending} onClick={() => { setRegisteringId(event.id); register.mutate(event.id) }}>
+                          {registeringId === event.id && <LoaderCircle className="mr-2 size-4 animate-spin" />}Confirm registration
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : <Button variant="outline" className="w-full" disabled>Registration closed</Button>}
+              </div>
+            </div>
+          </Card>
+        )
+      })}
     </div>
   )
 }

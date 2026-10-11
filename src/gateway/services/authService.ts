@@ -1,4 +1,4 @@
-import { postRequest } from '../apiService'
+import { postRequest, putRequest } from '../apiService'
 import type {
   TokenRequest,
   TokenResponse,
@@ -21,7 +21,7 @@ export const authService = {
 
   // Change password
   changePassword: async (passwordData: ChangePasswordRequest): Promise<void> => {
-    return postRequest<void, ChangePasswordRequest>('/auth/changepassword', passwordData)
+    return putRequest<void, ChangePasswordRequest>('/auth/changepassword', passwordData)
   },
 
   // Forgot password

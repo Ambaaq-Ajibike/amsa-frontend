@@ -10,21 +10,15 @@ export default function SettingsEvents() {
   return (
     <ContentSection
       title='Events'
-      desc='View and manage all events and your event registrations.'
+      desc='Discover what is coming up and keep track of the events you have joined.'
     >
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="all-events">All Events</TabsTrigger>
-          <TabsTrigger value="my-events">My Events</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-5">
+        <TabsList className="grid h-11 w-full max-w-sm grid-cols-2 rounded-xl">
+          <TabsTrigger value="all-events">All events</TabsTrigger>
+          <TabsTrigger value="my-events">My registrations</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="all-events" className="mt-6">
-          <EventsList />
-        </TabsContent>
-        
-        <TabsContent value="my-events" className="mt-6">
-          <UserEventsView />
-        </TabsContent>
+        <TabsContent value="all-events" className="mt-0"><EventsList /></TabsContent>
+        <TabsContent value="my-events" className="mt-0"><UserEventsView /></TabsContent>
       </Tabs>
     </ContentSection>
   )

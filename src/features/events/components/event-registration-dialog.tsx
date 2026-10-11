@@ -38,7 +38,7 @@ export function EventRegistrationDialog({ event, open, onOpenChange }: EventRegi
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">{event.title}</DialogTitle>
           <DialogDescription>
-            Register for this AMSA event
+            Event information and schedule
           </DialogDescription>
         </DialogHeader>
 
@@ -114,7 +114,7 @@ export function EventRegistrationDialog({ event, open, onOpenChange }: EventRegi
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>

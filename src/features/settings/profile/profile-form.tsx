@@ -252,13 +252,14 @@ export default function ProfileForm() {
             console.error('Profile update error:', err)
           }
         })}
-        className='space-y-8'
+        className='grid grid-cols-1 gap-x-5 gap-y-6 md:grid-cols-2'
       >
+        <div className='md:col-span-2'><h3 className='text-sm font-semibold'>Personal information</h3><p className='mt-1 text-sm text-muted-foreground'>Fields marked as read-only are managed by AMSA.</p></div>
         <FormField
           control={form.control}
           name='memberNumber'
           render={({ field }) => (
-            <FormItem>
+            <FormItem className='space-y-2'>
               <FormLabel>Member Number</FormLabel>
               <FormControl>
                 <Input placeholder='222222' {...field} readOnly disabled/>
@@ -271,7 +272,7 @@ export default function ProfileForm() {
           control={form.control}
           name='firstName'
           render={({ field }) => (
-            <FormItem>
+            <FormItem className='space-y-2'>
               <FormLabel>First name</FormLabel>
               <FormControl>
                 <Input placeholder='Ahmad' {...field} />
@@ -284,7 +285,7 @@ export default function ProfileForm() {
           control={form.control}
           name='lastName'
           render={({ field }) => (
-            <FormItem>
+            <FormItem className='space-y-2'>
               <FormLabel>Last name</FormLabel>
               <FormControl>
                 <Input placeholder='Ahmad' {...field} />
@@ -297,7 +298,7 @@ export default function ProfileForm() {
           control={form.control}
           name='email'
           render={({ field }) => (
-            <FormItem>
+            <FormItem className='space-y-2'>
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input placeholder='ahmad@yahoo.com' {...field} />
@@ -310,7 +311,7 @@ export default function ProfileForm() {
           control={form.control}
           name='phoneNumber'
           render={({ field }) => (
-            <FormItem>
+            <FormItem className='space-y-2'>
               <FormLabel>Phone number</FormLabel>
               <FormControl>
                 <Input placeholder='+23480000000' {...field} />
@@ -323,7 +324,7 @@ export default function ProfileForm() {
           control={form.control}
           name="dob"
           render={({ field }) => (
-            <FormItem className="flex flex-col w-full">
+            <FormItem className="flex w-full flex-col space-y-2">
               <FormLabel>Date of birth</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
@@ -366,7 +367,7 @@ export default function ProfileForm() {
           control={form.control}
           name="unit"
           render={({ field }) => (
-            <FormItem className="flex flex-col w-full min-w-0">
+            <FormItem className="flex w-full min-w-0 flex-col space-y-2">
               <FormLabel>Unit</FormLabel>
               {/* key forces Radix to remount when saved value / list changes so placeholder doesn't stick */}
               <Select
@@ -401,11 +402,12 @@ export default function ProfileForm() {
           )}
         />
 
+        <div className='mt-2 border-t pt-5 md:col-span-2'><h3 className='text-sm font-semibold'>Academic details</h3><p className='mt-1 text-sm text-muted-foreground'>Update your current study information.</p></div>
         <FormField
           control={form.control}
           name='level'
           render={({ field }) => (
-            <FormItem>
+            <FormItem className='space-y-2'>
               <FormLabel>Level</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
@@ -433,7 +435,7 @@ export default function ProfileForm() {
           control={form.control}
           name='courseField'
           render={({ field }) => (
-            <FormItem>
+            <FormItem className='space-y-2'>
               <FormLabel>Course/Career Field</FormLabel>
               <FormControl>
                 <Input placeholder='Medicine, Engineering, etc.' {...field} />
@@ -447,7 +449,7 @@ export default function ProfileForm() {
           control={form.control}
           name='cgpa'
           render={({ field }) => (
-            <FormItem>
+            <FormItem className='space-y-2'>
               <FormLabel>CGPA</FormLabel>
               <FormControl>
                 <Input 
@@ -470,7 +472,7 @@ export default function ProfileForm() {
           control={form.control}
           name='graduationYear'
           render={({ field }) => (
-            <FormItem>
+            <FormItem className='space-y-2'>
               <FormLabel>Graduation Year</FormLabel>
               <FormControl>
                 <Input 
@@ -492,7 +494,7 @@ export default function ProfileForm() {
           control={form.control}
           name='exchangeProgramInterest'
           render={({ field }) => (
-            <FormItem className='flex flex-row items-center space-x-3 space-y-0'>
+            <FormItem className='flex flex-row items-center space-x-3 space-y-0 rounded-xl border bg-muted/30 p-4 md:col-span-2'>
               <FormControl>
                 <Checkbox 
                   checked={field.value}
@@ -506,7 +508,7 @@ export default function ProfileForm() {
           )}
         />
 
-        <Button type='submit' disabled={isUpdating}>
+        <Button type='submit' disabled={isUpdating} className='w-full md:col-span-2 md:w-fit'>
           {isUpdating ? 'Updating...' : 'Update profile'}
         </Button>
       </form>

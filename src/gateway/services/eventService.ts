@@ -1,10 +1,14 @@
-import { getRequest, postRequest } from '../apiService'
+import { deleteRequest, getRequest, postRequest, putRequest } from '../apiService'
 import type {
   CreateEventRequest,
   Event,
   EventParticipant,
   EventQueryParams,
   EventParticipantsQueryParams,
+  EventQrToken,
+  EventMealsResponse,
+  EventMeal,
+  QrScanResult,
   PaginatedResponse
 } from '../types/api'
 
@@ -77,6 +81,39 @@ export const eventService = {
   // Mark participant as present
   markParticipantPresent: async (eventId: string, userId: string): Promise<void> => {
     return postRequest<void, object>(`/events/${eventId}/users/${userId}/mark-present`, {})
+  },
+
+  getMyQrToken: async (eventId: string): Promise<EventQrToken> => {
+    return getRequest<EventQrToken>(`/events/${eventId}/my-qr`)
+  },
+
+  getEventMeals: async (eventId: string): Promise<EventMealsResponse> => {
+    return getRequest<EventMealsResponse>(`/events/${eventId}/meals`)
+  },
+
+  generateEventMeals: async (eventId: string): Promise<{ meals: EventMeal[] }> => {
+    return postRequest<{ meals: EventMeal[] }, object>(`/events/${eventId}/meals/generate`, {})
+  },
+
+  updateEventMeal: async (eventId: string, mealId: string, meal: Pick<EventMeal, 'name' | 'startTime' | 'endTime'>): Promise<EventMeal> => {
+    const body = {
+      eventId,
+      mealId,
+      ...meal,
+    }
+    return putRequest<EventMeal, typeof body>(`/events/${eventId}/meals/${mealId}`, body)
+  },
+
+  deleteEventMeal: async (eventId: string, mealId: string): Promise<void> => {
+    return deleteRequest<void>(`/events/${eventId}/meals/${mealId}`)
+  },
+
+  scanAttendanceQr: async (eventId: string, token: string): Promise<QrScanResult> => {
+    return postRequest<QrScanResult, { token: string }>(`/events/${eventId}/scan/attendance`, { token })
+  },
+
+  scanMealQr: async (eventId: string, token: string): Promise<QrScanResult> => {
+    return postRequest<QrScanResult, { token: string }>(`/events/${eventId}/scan/meal`, { token })
   },
 
   // Export events as Excel file

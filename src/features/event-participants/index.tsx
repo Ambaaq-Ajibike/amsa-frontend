@@ -1,7 +1,6 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
-import { useSearch } from '@tanstack/react-router'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -15,10 +14,12 @@ import { eventService } from '@/gateway/services'
 import { useState } from 'react'
 import { downloadFileFromEndpoint } from '@/utils/export-utils'
 import { showErrorToast, showSuccessToast } from '@/utils/error-handler'
-
-
-
-
+import { Button } from '@/components/ui/button'
+import { QrCode } from 'lucide-react'
+import { usePermissions } from '@/lib/permissions'
+import { EventQrScannerDialog } from './components/event-qr-scanner-dialog'
+import { useEventSelection } from '@/features/events/use-event-selection'
+import { EventWorkspacePicker } from '@/features/events/components/event-workspace-picker'
 
 async function getParticipants(eventId: string, page: number, pageSize: number, isPresent: boolean | null) {
   return eventService.getEventParticipants({
@@ -30,16 +31,19 @@ async function getParticipants(eventId: string, page: number, pageSize: number, 
 }
 
 export default function EventParticipants() {
-  const search = useSearch({ from: '/_authenticated/event-participants/' })
-  const event = (search as { event?: string })?.event
+  const { events, eventId: event, setEventId, selectedEvent, isLoading: eventsLoading, isError: eventsError } = useEventSelection()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [isPresent, setIsPresent] = useState<boolean | null>(null)
+  const [scannerMode, setScannerMode] = useState<'attendance' | null>(null)
+  const queryClient = useQueryClient()
+  const { hasPermission } = usePermissions()
+  const canCheckIn = hasPermission('CanCheckInEvent')
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['participants', event, page, pageSize, isPresent],
     queryFn: () => getParticipants(event!, page, pageSize, isPresent),
-    enabled: !!event, // only run if eventId exists
+    enabled: !!event,
   })
 
   const handleExport = async () => {
@@ -78,17 +82,19 @@ export default function EventParticipants() {
         </div>
       </Header>
 
-      <Main>
-        <div className="mb-2 flex flex-wrap items-center justify-between space-y-2 gap-x-4">
+      <Main className="gap-5">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">{eventData.title}</h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">Event operations</p>
+            <h2 className="mt-1 text-2xl font-bold tracking-tight">{eventData.title}</h2>
             <p className="text-muted-foreground">{eventData.description}</p>
           </div>
-          {/* <UsersPrimaryButtons /> */}
+          {event && canCheckIn && <Button variant="outline" onClick={() => setScannerMode('attendance')}><QrCode className="mr-2 h-4 w-4" />Scan attendance</Button>}
         </div>
+        <EventWorkspacePicker events={events} eventId={event} onEventChange={(id) => { setEventId(id); setPage(1) }} isLoading={eventsLoading} isError={eventsError} selectedEvent={selectedEvent} />
 
-        <div className="-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12">
-          {isError && <p className="text-red-500">Failed to load participants</p>}
+        {event ? <div className="-mx-4 px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12">
+          {isError && <p className="mb-3 text-sm text-destructive">Failed to load participants</p>}
           <ParticipantsTable
             data={data?.items?.map((p) => ({
               userId: p.userId,
@@ -112,10 +118,18 @@ export default function EventParticipants() {
             onIsPresentChange={setIsPresent}
             onExport={handleExport}
           />
-        </div>
+        </div> : <div className="mt-5 flex min-h-56 items-center justify-center rounded-xl border border-dashed text-center text-sm text-muted-foreground">{eventsLoading ? 'Loading events…' : 'No events are available yet.'}</div>}
       </Main>
 
       <UsersDialogs />
+      {event && scannerMode && <EventQrScannerDialog
+        key={`${event}-${scannerMode}`}
+        eventId={event}
+        mode={scannerMode}
+        open={!!scannerMode}
+        onOpenChange={(open) => { if (!open) setScannerMode(null) }}
+        onScanned={() => { void queryClient.invalidateQueries({ queryKey: ['participants', event] }) }}
+      />}
     </UsersProvider>
   )
 }

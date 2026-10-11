@@ -264,6 +264,40 @@ export interface EventParticipantsQueryParams extends PaginationParams {
   eventId: string
   isPresent?: boolean
 }
+
+export interface EventQrToken {
+  token: string
+  userId: string
+  eventId: string
+}
+
+export interface EventMeal {
+  id: string
+  name: string
+  startTime: string
+  endTime: string
+}
+
+export interface EventMealWithStats extends EventMeal {
+  collected: number
+  totalPresent: number
+  remaining: number
+}
+
+export interface EventMealsResponse {
+  totalPresent: number
+  meals: EventMealWithStats[]
+}
+
+export interface QrScanResult {
+  userId: string
+  eventId: string
+  userName: string
+  memberNo: string
+  markedAt?: string
+  mealName?: string
+  collectedAt?: string
+}
 // Export Types
 export interface ExportRequest {
   tableType: 'users' | 'events' | 'participants'

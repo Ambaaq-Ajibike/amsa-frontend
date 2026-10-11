@@ -1,5 +1,3 @@
-import { Separator } from '@/components/ui/separator'
-
 interface ContentSectionProps {
   title: string
   desc: string
@@ -11,16 +9,12 @@ export default function ContentSection({
   desc,
   children,
 }: ContentSectionProps) {
-  return (
-    <div className='flex flex-1 flex-col overflow-hidden min-h-0'>
-      <div className='flex-none'>
-        <h3 className='text-lg font-medium'>{title}</h3>
-        <p className='text-muted-foreground text-sm'>{desc}</p>
-      </div>
-      <Separator className='my-4 flex-none' />
-      <div className='relative flex-1 min-h-0 w-full overflow-y-auto scroll-smooth pr-4 pb-6'>
-        <div className='-mx-1 px-1.5 lg:max-w-xl'>{children}</div>
-      </div>
-    </div>
-  )
+  return <section className='min-w-0 space-y-6'>
+    <header className='border-b pb-5'>
+      <p className='text-xs font-semibold uppercase tracking-[0.16em] text-primary'>Preferences</p>
+      <h2 className='mt-1 text-2xl font-bold tracking-tight'>{title}</h2>
+      <p className='mt-1 max-w-2xl text-sm leading-6 text-muted-foreground'>{desc}</p>
+    </header>
+    <div className='min-w-0'>{children}</div>
+  </section>
 }
