@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserQRCodeReader } from '@zxing/browser'
 import type { IScannerControls } from '@zxing/browser'
-import { Camera, Check, LoaderCircle } from 'lucide-react'
+import { Camera, Check, LoaderCircle, ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -19,6 +19,7 @@ interface Props {
 export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScanned }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const controlsRef = useRef<IScannerControls | null>(null)
+  const cameraRequestIdRef = useRef(0)
   const processingRef = useRef(false)
   const submitTokenRef = useRef<(value: string) => Promise<void>>(async () => {})
   const [token, setToken] = useState('')
@@ -26,6 +27,8 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [cameraError, setCameraError] = useState('')
+  const [isStartingCamera, setIsStartingCamera] = useState(false)
+  const [cameraStarted, setCameraStarted] = useState(false)
 
   const submitToken = async (value: string) => {
     const cleanToken = value.trim()
@@ -51,34 +54,59 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
 
   useEffect(() => {
     if (!open || result) return
-    let cancelled = false
-    const reader = new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 200, delayBetweenScanSuccess: 500 })
-    setCameraError('')
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError('Camera access requires HTTPS or localhost. Paste the QR token below to continue.')
-      return
-    }
-    if (!videoRef.current) return
-    void reader.decodeFromVideoDevice(undefined, videoRef.current, (decoded) => {
-      if (!decoded || cancelled || processingRef.current) return
-      const scannedToken = decoded.getText()
-      setToken(scannedToken)
-      void submitTokenRef.current(scannedToken)
-    }).then((controls) => {
-      if (cancelled) controls.stop()
-      else controlsRef.current = controls
-    }).catch(() => {
-      if (!cancelled) setCameraError('Could not access the camera. Check the browser permission, or paste the QR token below.')
-    })
     return () => {
-      cancelled = true
+      cameraRequestIdRef.current += 1
       controlsRef.current?.stop()
       controlsRef.current = null
       processingRef.current = false
     }
-  }, [open, result, mode, eventId])
+  }, [open, result])
 
-  const reset = () => { setResult(null); setToken(''); setError(''); processingRef.current = false }
+  const startCamera = async () => {
+    if (isStartingCamera || cameraStarted || result) return
+    setCameraError('')
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError('This browser cannot access the camera. Open the site over HTTPS and allow camera access in your browser settings.')
+      return
+    }
+    if (!videoRef.current) {
+      setCameraError('The camera preview is not ready yet. Close this window and try again.')
+      return
+    }
+
+    const requestId = ++cameraRequestIdRef.current
+    const reader = new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 200, delayBetweenScanSuccess: 500 })
+    setIsStartingCamera(true)
+    try {
+      const controls = await reader.decodeFromVideoDevice(undefined, videoRef.current, (decoded) => {
+        if (!decoded || processingRef.current) return
+        const scannedToken = decoded.getText()
+        setToken(scannedToken)
+        void submitTokenRef.current(scannedToken)
+      })
+      if (requestId !== cameraRequestIdRef.current) {
+        controls.stop()
+        return
+      }
+      controlsRef.current = controls
+      setCameraStarted(true)
+    } catch (cause) {
+      if (requestId !== cameraRequestIdRef.current) return
+      const name = cause instanceof Error ? cause.name : ''
+      const message = name === 'NotAllowedError' || name === 'PermissionDeniedError'
+        ? 'Camera permission was denied. Allow camera access for this site in your browser settings, then try again.'
+        : name === 'NotFoundError' || name === 'DevicesNotFoundError'
+          ? 'No camera was found on this device.'
+          : name === 'NotReadableError' || name === 'TrackStartError'
+            ? 'The camera is busy in another app. Close other apps using it and try again.'
+            : `Could not start the camera${cause instanceof Error && cause.message ? `: ${cause.message}` : '.'}`
+      setCameraError(message)
+    } finally {
+      if (requestId === cameraRequestIdRef.current) setIsStartingCamera(false)
+    }
+  }
+
+  const reset = () => { setResult(null); setToken(''); setError(''); setCameraStarted(false); processingRef.current = false }
   const label = mode === 'attendance' ? 'Attendance check-in' : 'Meal collection'
 
   return (
@@ -97,9 +125,17 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
         ) : (
           <div className="space-y-4">
             <div className="relative aspect-video overflow-hidden rounded-xl bg-slate-950">
-              <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
+              <video ref={videoRef} className="h-full w-full object-cover" muted playsInline autoPlay />
               <div className="pointer-events-none absolute inset-[18%] rounded-xl border-2 border-lime-300 shadow-[0_0_0_999px_rgba(0,0,0,0.28)]" />
               <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-2 text-sm text-white"><Camera className="h-4 w-4" /> Center the QR code in the frame</div>
+              {!cameraStarted && <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/90 p-5 text-center text-white">
+                <Camera className="h-8 w-8 text-slate-300" />
+                <p className="text-sm text-slate-300">Start the camera to scan an event tag.</p>
+                <Button type="button" onClick={() => void startCamera()} disabled={isStartingCamera}>
+                  {isStartingCamera ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
+                  {isStartingCamera ? 'Opening camera…' : 'Start camera'}
+                </Button>
+              </div>}
             </div>
             {cameraError && <p className="text-sm text-muted-foreground">{cameraError}</p>}
             <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); void submitToken(token) }}>
