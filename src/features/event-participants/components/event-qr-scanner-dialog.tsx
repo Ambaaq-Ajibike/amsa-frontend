@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserQRCodeReader } from '@zxing/browser'
+import { DecodeHintType } from '@zxing/library'
 import type { IScannerControls } from '@zxing/browser'
 import { Camera, Check, LoaderCircle, ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -29,6 +30,7 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
   const [cameraError, setCameraError] = useState('')
   const [isStartingCamera, setIsStartingCamera] = useState(false)
   const [cameraStarted, setCameraStarted] = useState(false)
+  const [scanStatus, setScanStatus] = useState('')
 
   const submitToken = async (value: string) => {
     const cleanToken = value.trim()
@@ -37,6 +39,7 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
     setIsSubmitting(true)
     setError('')
     try {
+      setScanStatus('Checking the QR code…')
       const scanned = mode === 'attendance'
         ? await eventService.scanAttendanceQr(eventId, cleanToken)
         : await eventService.scanMealQr(eventId, cleanToken)
@@ -45,6 +48,7 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : 'The QR code could not be processed.'
       setError(message)
+      setScanStatus('QR detected, but the event service could not accept it. You can try again.')
       processingRef.current = false
     } finally {
       setIsSubmitting(false)
@@ -75,12 +79,16 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
     }
 
     const requestId = ++cameraRequestIdRef.current
-    const reader = new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 200, delayBetweenScanSuccess: 500 })
+    const reader = new BrowserQRCodeReader(
+      new Map([[DecodeHintType.TRY_HARDER, true]]),
+      { delayBetweenScanAttempts: 250, delayBetweenScanSuccess: 800 }
+    )
     setIsStartingCamera(true)
     try {
       const controls = await reader.decodeFromVideoDevice(undefined, videoRef.current, (decoded) => {
         if (!decoded || processingRef.current) return
         const scannedToken = decoded.getText()
+        setScanStatus('QR detected. Submitting…')
         setToken(scannedToken)
         void submitTokenRef.current(scannedToken)
       })
@@ -90,6 +98,7 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
       }
       controlsRef.current = controls
       setCameraStarted(true)
+      setScanStatus('Camera ready. Hold the QR code steady inside the frame.')
     } catch (cause) {
       if (requestId !== cameraRequestIdRef.current) return
       const name = cause instanceof Error ? cause.name : ''
@@ -106,7 +115,7 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
     }
   }
 
-  const reset = () => { setResult(null); setToken(''); setError(''); setCameraStarted(false); processingRef.current = false }
+  const reset = () => { setResult(null); setToken(''); setError(''); setScanStatus(''); setCameraStarted(false); processingRef.current = false }
   const label = mode === 'attendance' ? 'Attendance check-in' : 'Meal collection'
 
   return (
@@ -138,6 +147,7 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
               </div>}
             </div>
             {cameraError && <p className="text-sm text-muted-foreground">{cameraError}</p>}
+            {scanStatus && <p aria-live="polite" className="text-center text-sm text-muted-foreground">{scanStatus}</p>}
             <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); void submitToken(token) }}>
               <Input value={token} onChange={(e) => setToken(e.target.value)} placeholder="Or paste the QR token" aria-label="QR token" />
               <Button type="submit" disabled={!token.trim() || isSubmitting}>{isSubmitting && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}Submit</Button>
