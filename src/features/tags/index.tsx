@@ -16,11 +16,10 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { IconLoader2, IconPrinter, IconUsers, IconCalendar } from '@tabler/icons-react'
-import { eventService, userService } from '@/gateway/services'
-import { units } from '@/gateway/unit'
-import type { User, Event, EventParticipant } from '@/gateway/types/api'
+import { eventService, userService, utilityService } from '@/gateway/services'
+import type { User, Event, ParticipantTagDto } from '@/gateway/types/api'
 import { TagCard } from './components/tag-card'
-import { printTags } from './utils/print-tags'
+import { printTags, printParticipantTags } from './utils/print-tags'
 
 type PerPage = 4 | 6
 
@@ -29,6 +28,12 @@ type PerPage = 4 | 6
 function ByUnitTab({ perPage }: { perPage: PerPage }) {
   const [selectedUnit, setSelectedUnit] = useState<string>('')
   const [printingAll, setPrintingAll] = useState(false)
+  const [isPrinting, setIsPrinting] = useState(false)
+
+  const { data: unitsData, isLoading: unitsLoading } = useQuery({
+    queryKey: ['units-list'],
+    queryFn: () => utilityService.getUnits(),
+  })
 
   const { data, isLoading } = useQuery({
     queryKey: ['tag-members', selectedUnit],
@@ -48,23 +53,37 @@ function ByUnitTab({ perPage }: { perPage: PerPage }) {
   })
 
   const members: User[] = data?.items ?? []
-  const unitLabel = units.find((u) => u.value === selectedUnit)?.label ?? selectedUnit
+  const selectedUnitLabel = unitsData?.find((u) => u.code === selectedUnit)?.name ?? selectedUnit
 
-  // Trigger print once all-members data finishes loading
   useEffect(() => {
     if (printingAll && allData?.items && allData.items.length > 0) {
+      setIsPrinting(true)
       printTags(allData.items, perPage, 'All Units — Tags')
-      setPrintingAll(false)
+        .finally(() => {
+          setIsPrinting(false)
+          setPrintingAll(false)
+        })
     }
   }, [printingAll, allData, perPage])
 
-  function handlePrintUnit() {
-    printTags(members, perPage, `${unitLabel} — Tags`)
+  async function handlePrintUnit() {
+    if (members.length === 0) return
+    setIsPrinting(true)
+    try {
+      await printTags(members, perPage, `${selectedUnitLabel} — Tags`)
+    } finally {
+      setIsPrinting(false)
+    }
   }
 
-  function handlePrintAll() {
+  async function handlePrintAll() {
     if (allData?.items && allData.items.length > 0) {
-      printTags(allData.items, perPage, 'All Units — Tags')
+      setIsPrinting(true)
+      try {
+        await printTags(allData.items, perPage, 'All Units — Tags')
+      } finally {
+        setIsPrinting(false)
+      }
     } else {
       setPrintingAll(true)
     }
@@ -75,41 +94,47 @@ function ByUnitTab({ perPage }: { perPage: PerPage }) {
       <div className='flex flex-wrap items-end gap-3'>
         <div className='space-y-1'>
           <p className='text-sm font-medium'>Select unit</p>
-          <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-            <SelectTrigger className='w-48'>
-              <SelectValue placeholder='Choose a unit…' />
-            </SelectTrigger>
-            <SelectContent>
-              {units.map((u) => (
-                <SelectItem key={u.value} value={u.value}>
-                  {u.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {unitsLoading ? (
+            <div className='flex h-9 w-48 items-center gap-2 rounded-md border px-3 text-sm text-muted-foreground'>
+              <IconLoader2 className='size-4 animate-spin' /> Loading…
+            </div>
+          ) : (
+            <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+              <SelectTrigger className='w-48'>
+                <SelectValue placeholder='Choose a unit…' />
+              </SelectTrigger>
+              <SelectContent>
+                {(unitsData ?? []).map((u) => (
+                  <SelectItem key={u.id} value={u.code}>
+                    {u.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <Button
           variant='outline'
-          onClick={handlePrintUnit}
-          disabled={!selectedUnit || isLoading || members.length === 0}
+          onClick={() => void handlePrintUnit()}
+          disabled={!selectedUnit || isLoading || members.length === 0 || isPrinting}
           className='gap-2'
         >
-          {isLoading ? (
+          {isLoading || isPrinting ? (
             <IconLoader2 className='size-4 animate-spin' />
           ) : (
             <IconPrinter className='size-4' />
           )}
-          Print {unitLabel ? `${unitLabel} ` : ''}Tags
+          Print {selectedUnitLabel ? `${selectedUnitLabel} ` : ''}Tags
           {members.length > 0 && ` (${members.length})`}
         </Button>
 
         <Button
-          onClick={handlePrintAll}
-          disabled={allLoading && printingAll}
+          onClick={() => void handlePrintAll()}
+          disabled={(allLoading && printingAll) || isPrinting}
           className='gap-2'
         >
-          {allLoading && printingAll ? (
+          {(allLoading && printingAll) || isPrinting ? (
             <IconLoader2 className='size-4 animate-spin' />
           ) : (
             <IconPrinter className='size-4' />
@@ -126,7 +151,7 @@ function ByUnitTab({ perPage }: { perPage: PerPage }) {
 
       {!isLoading && selectedUnit && members.length === 0 && (
         <p className='py-8 text-center text-muted-foreground'>
-          No members found for {unitLabel}.
+          No members found for {selectedUnitLabel}.
         </p>
       )}
 
@@ -137,7 +162,7 @@ function ByUnitTab({ perPage }: { perPage: PerPage }) {
           </p>
           <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'>
             {members.map((member) => (
-              <div key={member.id} className='h-36'>
+              <div key={member.id} className='h-44'>
                 <TagCard user={member} />
               </div>
             ))}
@@ -152,29 +177,55 @@ function ByUnitTab({ perPage }: { perPage: PerPage }) {
 
 function ByEventTab({ perPage }: { perPage: PerPage }) {
   const [selectedEventId, setSelectedEventId] = useState<string>('')
+  const [selectedUnit, setSelectedUnit] = useState<string>('all')
+  const [isPrinting, setIsPrinting] = useState(false)
 
   const { data: eventsData, isLoading: eventsLoading } = useQuery({
     queryKey: ['all-events-for-tags'],
     queryFn: () => eventService.getEvents({ pageSize: 200 }),
   })
 
-  const { data: participantsData, isLoading: participantsLoading } = useQuery({
-    queryKey: ['event-participants-tags', selectedEventId],
-    queryFn: () =>
-      eventService.getEventParticipants({
-        eventId: selectedEventId,
-        pageSize: 1000,
-      }),
+  // Fetch units that have participants for the selected event
+  const { data: participantUnits, isLoading: unitsLoading } = useQuery({
+    queryKey: ['participant-units', selectedEventId],
+    queryFn: () => eventService.getParticipantUnits(selectedEventId),
+    enabled: selectedEventId !== '',
+  })
+
+  // Fetch participant tags (with tokens if event uses QR)
+  const unitFilter = selectedUnit !== 'all' ? selectedUnit : undefined
+  const { data: tagsData, isLoading: tagsLoading } = useQuery({
+    queryKey: ['participant-tags', selectedEventId, unitFilter],
+    queryFn: () => eventService.getParticipantTags(selectedEventId, unitFilter),
     enabled: selectedEventId !== '',
   })
 
   const events: Event[] = eventsData?.items ?? []
-  const participants: EventParticipant[] = participantsData?.items ?? []
-  const members: User[] = participants.map((p) => p.user)
-  const eventTitle = events.find((e) => e.id === selectedEventId)?.title ?? ''
+  const selectedEvent = events.find((e) => e.id === selectedEventId)
+  const participants: ParticipantTagDto[] = tagsData?.participants ?? []
 
-  function handlePrint() {
-    printTags(members, perPage, `${eventTitle} — Tags`)
+  // Reset unit filter when event changes
+  const handleEventChange = (id: string) => {
+    setSelectedEventId(id)
+    setSelectedUnit('all')
+  }
+
+  async function handlePrint() {
+    if (!tagsData || participants.length === 0) return
+    setIsPrinting(true)
+    try {
+      const unitLabel = selectedUnit !== 'all' ? ` · ${selectedUnit}` : ''
+      await printParticipantTags(
+        tagsData.participants,
+        perPage,
+        `${tagsData.eventTitle}${unitLabel} — Tags`,
+        tagsData.eventTitle,
+        tagsData.eventStartDate,
+        tagsData.useQrCode,
+      )
+    } finally {
+      setIsPrinting(false)
+    }
   }
 
   return (
@@ -187,7 +238,7 @@ function ByEventTab({ perPage }: { perPage: PerPage }) {
               <IconLoader2 className='size-4 animate-spin' /> Loading…
             </div>
           ) : (
-            <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+            <Select value={selectedEventId} onValueChange={handleEventChange}>
               <SelectTrigger className='w-64'>
                 <SelectValue placeholder='Choose an event…' />
               </SelectTrigger>
@@ -202,42 +253,79 @@ function ByEventTab({ perPage }: { perPage: PerPage }) {
           )}
         </div>
 
+        {selectedEventId && !unitsLoading && (participantUnits?.length ?? 0) > 0 && (
+          <div className='space-y-1'>
+            <p className='text-sm font-medium'>Filter by unit</p>
+            <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+              <SelectTrigger className='w-44'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All units</SelectItem>
+                {(participantUnits ?? []).map((u) => (
+                  <SelectItem key={u} value={u}>
+                    {u}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <Button
-          onClick={handlePrint}
-          disabled={!selectedEventId || participantsLoading || members.length === 0}
+          onClick={() => void handlePrint()}
+          disabled={!selectedEventId || tagsLoading || participants.length === 0 || isPrinting}
           className='gap-2'
         >
-          {participantsLoading ? (
+          {tagsLoading || isPrinting ? (
             <IconLoader2 className='size-4 animate-spin' />
           ) : (
             <IconPrinter className='size-4' />
           )}
           Print Tags
-          {members.length > 0 && ` (${members.length})`}
+          {participants.length > 0 && ` (${participants.length})`}
         </Button>
       </div>
 
-      {participantsLoading && selectedEventId && (
+      {selectedEvent && (
+        <p className='text-xs text-muted-foreground'>
+          {selectedEvent.useQrCode
+            ? 'This event uses QR codes — tags will include a scannable QR for attendance and meals.'
+            : 'This event has no QR scanning enabled — tags will be printed without QR codes.'}
+        </p>
+      )}
+
+      {tagsLoading && selectedEventId && (
         <div className='flex h-32 items-center justify-center'>
           <IconLoader2 className='size-8 animate-spin text-muted-foreground' />
         </div>
       )}
 
-      {!participantsLoading && selectedEventId && members.length === 0 && (
+      {!tagsLoading && selectedEventId && participants.length === 0 && (
         <p className='py-8 text-center text-muted-foreground'>
-          No registered participants found for this event.
+          No registered participants found
+          {selectedUnit !== 'all' ? ` for ${selectedUnit}` : ''}.
         </p>
       )}
 
-      {members.length > 0 && (
+      {participants.length > 0 && (
         <div>
           <p className='mb-3 text-sm text-muted-foreground'>
-            Showing {members.length} participant{members.length !== 1 ? 's' : ''} — preview
+            Showing {participants.length} participant{participants.length !== 1 ? 's' : ''} — preview
           </p>
           <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'>
-            {members.map((member) => (
-              <div key={member.id} className='h-36'>
-                <TagCard user={member} />
+            {participants.map((p) => (
+              <div key={p.userId} className='h-44'>
+                <TagCard
+                  user={{
+                    id: p.userId,
+                    memberNo: p.memberNo,
+                    firstName: p.firstName,
+                    lastName: p.lastName,
+                    unit: p.unit,
+                  } as User}
+                  qrToken={p.token ?? undefined}
+                />
               </div>
             ))}
           </div>

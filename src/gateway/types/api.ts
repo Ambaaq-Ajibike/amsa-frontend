@@ -153,6 +153,24 @@ export interface Event {
   createdAt: string
   updatedAt: string
   registeredUsersCount: number
+  useQrCode: boolean
+}
+
+export interface ParticipantTagDto {
+  userId: string
+  memberNo: string
+  firstName: string
+  lastName: string
+  unit: string
+  token: string | null
+}
+
+export interface ParticipantTagsResponse {
+  eventId: string
+  eventTitle: string
+  eventStartDate: string
+  useQrCode: boolean
+  participants: ParticipantTagDto[]
 }
 
 export interface EventRegistration {
