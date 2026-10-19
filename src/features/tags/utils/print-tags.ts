@@ -28,11 +28,9 @@ function tagHtml(
   footerText?: string,
 ): string {
   const name = esc(`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'AMSA Member')
-  const unit = esc(user.unit || 'AMSA Nigeria')
   const memberNo = esc(user.memberNo || '')
-  // For unit tags: title box = unit (no need to repeat unit below name)
-  // For event tags: title box = event title, so show unit below the name
   const titleBox = esc(titleBoxText || user.unit || 'AMSA Nigeria')
+  const unitLabel = esc(user.unit || 'AMSA Nigeria')
   const showUnitBelowName = !!titleBoxText && titleBoxText !== (user.unit || 'AMSA Nigeria')
   const footer = footerText || 'SCAN TO VERIFY MEMBERSHIP'
   const isSmall = perPage === 6
@@ -60,7 +58,7 @@ function tagHtml(
       <div class="tag-member">
         <div class="tag-member-label">REGISTERED MEMBER</div>
         <div class="tag-name">${name.toUpperCase()}</div>
-        ${showUnitBelowName ? `<div class="tag-unit">${unit.toUpperCase()}</div>` : ''}
+        ${showUnitBelowName ? `<div class="tag-unit">${unitLabel.toUpperCase()}</div>` : ''}
         ${memberNo ? `<div class="tag-memberno">No: ${memberNo}</div>` : ''}
       </div>
 
