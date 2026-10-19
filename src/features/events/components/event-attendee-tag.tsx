@@ -180,9 +180,18 @@ export function EventAttendeeTag({
       context.fillText(date, 600, 1573)
     }
 
+    const dataUrl = canvas.toDataURL('image/png')
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    if (isIOS) {
+      // iOS Safari can't trigger canvas downloads — open image in new tab so user can save it
+      window.open(dataUrl, '_blank')
+      return
+    }
     const link = document.createElement('a')
     link.download = `amsa-${event.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-event-tag.png`
-    link.href = canvas.toDataURL('image/png')
+    link.href = dataUrl
     link.click()
   }
 

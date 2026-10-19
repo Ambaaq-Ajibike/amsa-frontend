@@ -1,6 +1,7 @@
 import {
   IconCalendar,
   IconChecklist,
+  IconId,
   IconLayoutDashboard,
   IconPackages,
   IconUserCog,
@@ -70,6 +71,15 @@ export function getSidebarData(permissions: string[] = [], roles: string[] = [])
       title: 'Event Meals',
       url: '/event-meals' as const,
       icon: Utensils,
+    })
+  }
+
+  // Add Print Tags for Admin or Tajneed roles
+  if (hasAdminOrTajneedRole) {
+    generalItems.push({
+      title: 'Print Tags',
+      url: '/tags' as const,
+      icon: IconId,
     })
   }
 

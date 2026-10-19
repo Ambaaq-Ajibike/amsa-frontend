@@ -2,6 +2,10 @@
  * Export utility functions for downloading files from the backend
  */
 
+const isIOS = () =>
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+
 /**
  * Download file from backend endpoint
  * @param endpoint - Backend endpoint that returns a file stream
@@ -69,6 +73,13 @@ export async function downloadFileFromEndpoint(
     // Create a temporary URL for the blob
     const blobUrl = window.URL.createObjectURL(blob)
 
+    if (isIOS()) {
+      // iOS Safari ignores the `download` attribute on blob URLs — open in new tab
+      window.open(blobUrl, '_blank')
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000)
+      return
+    }
+
     // Create a temporary anchor element and trigger download
     const anchor = document.createElement('a')
     anchor.href = blobUrl
@@ -121,6 +132,12 @@ export function exportTableAsCSV(
     // Create blob and download
     const blob = new Blob([csv], { type: 'text/csv' })
     const blobUrl = window.URL.createObjectURL(blob)
+
+    if (isIOS()) {
+      window.open(blobUrl, '_blank')
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000)
+      return
+    }
 
     const anchor = document.createElement('a')
     anchor.href = blobUrl
