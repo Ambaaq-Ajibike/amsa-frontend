@@ -4,14 +4,15 @@ import type { User } from '@/gateway/types/api'
 
 interface TagCardProps {
   user: User
+  qrToken?: string // when provided (event tags), encode this instead of memberNo
 }
 
-export function TagCard({ user }: TagCardProps) {
+export function TagCard({ user, qrToken }: TagCardProps) {
   const [qrImage, setQrImage] = useState('')
 
   useEffect(() => {
     let active = true
-    QRCode.toDataURL(user.memberNo || user.id || 'AMSA', {
+    QRCode.toDataURL(qrToken ?? user.memberNo ?? user.id ?? 'AMSA', {
       errorCorrectionLevel: 'H',
       margin: 1,
       width: 200,
@@ -22,7 +23,7 @@ export function TagCard({ user }: TagCardProps) {
     return () => {
       active = false
     }
-  }, [user.memberNo, user.id])
+  }, [qrToken, user.memberNo, user.id])
 
   const name = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'AMSA Member'
   const unit = user.unit || 'AMSA Nigeria'

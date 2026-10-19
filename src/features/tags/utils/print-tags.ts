@@ -1,5 +1,5 @@
 import QRCode from 'qrcode'
-import type { User } from '@/gateway/types/api'
+import type { ParticipantTagDto, User } from '@/gateway/types/api'
 
 function esc(str: string | null | undefined): string {
   if (!str) return ''
@@ -24,10 +24,12 @@ function tagHtml(
   qrDataUrl: string,
   logoUrl: string,
   perPage: 4 | 6,
+  titleBoxText?: string,
 ): string {
   const name = esc(`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'AMSA Member')
   const unit = esc(user.unit || 'AMSA Nigeria')
   const memberNo = esc(user.memberNo || '')
+  const titleBox = esc(titleBoxText || user.unit || 'AMSA Nigeria')
   const isSmall = perPage === 6
 
   return `
@@ -47,7 +49,7 @@ function tagHtml(
         <span class="tag-title-corner tr"></span>
         <span class="tag-title-corner bl"></span>
         <span class="tag-title-corner br"></span>
-        <div class="tag-title">${unit.toUpperCase()}</div>
+        <div class="tag-title">${titleBox.toUpperCase()}</div>
       </div>
 
       <div class="tag-member">
@@ -71,7 +73,7 @@ function tagHtml(
 }
 
 function buildPrintDocument(
-  usersWithQr: Array<{ user: User; qr: string }>,
+  usersWithQr: Array<{ user: User; qr: string; subtitle?: string }>,
   logoUrl: string,
   perPage: 4 | 6,
   title: string,
@@ -84,7 +86,7 @@ function buildPrintDocument(
   const tagH = rows === 2 ? 136 : 89
   const isSmall = perPage === 6
 
-  const tagsHtml = usersWithQr.map(({ user, qr }) => tagHtml(user, qr, logoUrl, perPage)).join('')
+  const tagsHtml = usersWithQr.map(({ user, qr, subtitle }) => tagHtml(user, qr, logoUrl, perPage, subtitle)).join('')
   const safeTitle = esc(title)
 
   return `<!DOCTYPE html>
@@ -283,6 +285,49 @@ function buildPrintDocument(
   </script>
 </body>
 </html>`
+}
+
+// For event tags that carry real server-issued QR tokens
+export async function printParticipantTags(
+  participants: ParticipantTagDto[],
+  perPage: 4 | 6,
+  title: string,
+  eventTitle: string,
+  eventStartDate: string,
+  useQrCode: boolean,
+) {
+  if (participants.length === 0) return
+
+  const printWindow = window.open('', '_blank')
+  if (!printWindow) {
+    alert('Pop-up was blocked. Please allow pop-ups for this site to print tags.')
+    return
+  }
+
+  const logoUrl = `${window.location.origin}/images/amsa-logo.jpg`
+
+  const usersWithQr = await Promise.all(
+    participants.map(async (p) => {
+      // Use real server token when available, fall back to memberNo
+      const qrContent = useQrCode && p.token ? p.token : p.memberNo || p.userId
+      return {
+        user: {
+          id: p.userId,
+          memberNo: p.memberNo,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          unit: p.unit,
+        } as User,
+        qr: await toQrDataUrl(qrContent),
+        subtitle: eventTitle,
+        subtitleDate: eventStartDate,
+      }
+    }),
+  )
+
+  const html = buildPrintDocument(usersWithQr, logoUrl, perPage, title)
+  printWindow.document.write(html)
+  printWindow.document.close()
 }
 
 export async function printTags(users: User[], perPage: 4 | 6, title = 'Member Tags') {

@@ -8,6 +8,7 @@ import type {
   EventQrToken,
   EventMealsResponse,
   EventMeal,
+  ParticipantTagsResponse,
   QrScanResult,
   PaginatedResponse
 } from '../types/api'
@@ -85,6 +86,15 @@ export const eventService = {
 
   getMyQrToken: async (eventId: string): Promise<EventQrToken> => {
     return getRequest<EventQrToken>(`/events/${eventId}/my-qr`)
+  },
+
+  getParticipantTags: async (eventId: string, unit?: string): Promise<ParticipantTagsResponse> => {
+    const params = unit ? `?unit=${encodeURIComponent(unit)}` : ''
+    return getRequest<ParticipantTagsResponse>(`/events/${eventId}/participants/tags${params}`)
+  },
+
+  getParticipantUnits: async (eventId: string): Promise<string[]> => {
+    return getRequest<string[]>(`/events/${eventId}/participant-units`)
   },
 
   getEventMeals: async (eventId: string): Promise<EventMealsResponse> => {
