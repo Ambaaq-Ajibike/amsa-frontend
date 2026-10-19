@@ -25,11 +25,16 @@ function tagHtml(
   logoUrl: string,
   perPage: 4 | 6,
   titleBoxText?: string,
+  footerText?: string,
 ): string {
   const name = esc(`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'AMSA Member')
   const unit = esc(user.unit || 'AMSA Nigeria')
   const memberNo = esc(user.memberNo || '')
+  // For unit tags: title box = unit (no need to repeat unit below name)
+  // For event tags: title box = event title, so show unit below the name
   const titleBox = esc(titleBoxText || user.unit || 'AMSA Nigeria')
+  const showUnitBelowName = !!titleBoxText && titleBoxText !== (user.unit || 'AMSA Nigeria')
+  const footer = footerText || 'SCAN TO VERIFY MEMBERSHIP'
   const isSmall = perPage === 6
 
   return `
@@ -55,6 +60,7 @@ function tagHtml(
       <div class="tag-member">
         <div class="tag-member-label">REGISTERED MEMBER</div>
         <div class="tag-name">${name.toUpperCase()}</div>
+        ${showUnitBelowName ? `<div class="tag-unit">${unit.toUpperCase()}</div>` : ''}
         ${memberNo ? `<div class="tag-memberno">No: ${memberNo}</div>` : ''}
       </div>
 
@@ -65,7 +71,7 @@ function tagHtml(
       </div>
 
       <div class="tag-footer">
-        <div>SCAN TO VERIFY MEMBERSHIP</div>
+        <div>${esc(footer)}</div>
         ${isSmall ? '' : '<div class="tag-footer-sub">AMSA NIGERIA TAJNEED PORTAL</div>'}
       </div>
     </div>
@@ -73,7 +79,7 @@ function tagHtml(
 }
 
 function buildPrintDocument(
-  usersWithQr: Array<{ user: User; qr: string; subtitle?: string }>,
+  usersWithQr: Array<{ user: User; qr: string; subtitle?: string; footerText?: string }>,
   logoUrl: string,
   perPage: 4 | 6,
   title: string,
@@ -86,7 +92,7 @@ function buildPrintDocument(
   const tagH = rows === 2 ? 136 : 89
   const isSmall = perPage === 6
 
-  const tagsHtml = usersWithQr.map(({ user, qr, subtitle }) => tagHtml(user, qr, logoUrl, perPage, subtitle)).join('')
+  const tagsHtml = usersWithQr.map(({ user, qr, subtitle, footerText }) => tagHtml(user, qr, logoUrl, perPage, subtitle, footerText)).join('')
   const safeTitle = esc(title)
 
   return `<!DOCTYPE html>
@@ -211,6 +217,14 @@ function buildPrintDocument(
       letter-spacing: -0.01em;
     }
 
+    .tag-unit {
+      font-size: ${isSmall ? '5.5pt' : '7pt'};
+      font-weight: 600;
+      color: #d1fae5;
+      letter-spacing: 0.12em;
+      margin-top: 1mm;
+    }
+
     .tag-memberno {
       font-size: ${isSmall ? '5pt' : '6.5pt'};
       color: #d1fae5;
@@ -306,6 +320,17 @@ export async function printParticipantTags(
 
   const logoUrl = `${window.location.origin}/images/amsa-logo.jpg`
 
+  const eventFooter = useQrCode
+    ? 'SCAN FOR EVENT CHECK-IN & MEALS'
+    : 'AMSA NIGERIA MEMBER TAG'
+
+  const formattedDate = (() => {
+    const d = new Date(eventStartDate)
+    return Number.isNaN(d.getTime())
+      ? ''
+      : d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+  })()
+
   const usersWithQr = await Promise.all(
     participants.map(async (p) => {
       // Use real server token when available, fall back to memberNo
@@ -320,7 +345,7 @@ export async function printParticipantTags(
         } as User,
         qr: await toQrDataUrl(qrContent),
         subtitle: eventTitle,
-        subtitleDate: eventStartDate,
+        footerText: formattedDate ? `${eventFooter} · ${formattedDate}` : eventFooter,
       }
     }),
   )

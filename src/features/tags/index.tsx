@@ -323,7 +323,7 @@ function ByEventTab({ perPage }: { perPage: PerPage }) {
                     firstName: p.firstName,
                     lastName: p.lastName,
                     unit: p.unit,
-                  } as Parameters<typeof TagCard>[0]['user']}
+                  } as User}
                   qrToken={p.token ?? undefined}
                 />
               </div>
