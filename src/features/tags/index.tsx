@@ -324,7 +324,7 @@ function ByEventTab({ perPage }: { perPage: PerPage }) {
                     lastName: p.lastName,
                     unit: p.unit,
                   } as User}
-                  qrToken={p.token ?? undefined}
+                  qrToken={p.token}
                 />
               </div>
             ))}
