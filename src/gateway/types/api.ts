@@ -162,7 +162,7 @@ export interface ParticipantTagDto {
   firstName: string
   lastName: string
   unit: string
-  token: string | null
+  token: string
 }
 
 export interface ParticipantTagsResponse {

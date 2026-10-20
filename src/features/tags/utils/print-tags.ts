@@ -331,8 +331,7 @@ export async function printParticipantTags(
 
   const usersWithQr = await Promise.all(
     participants.map(async (p) => {
-      // Use real server token when available, fall back to memberNo
-      const qrContent = useQrCode && p.token ? p.token : p.memberNo || p.userId
+      const qrContent = p.token || p.memberNo || p.userId
       return {
         user: {
           id: p.userId,
