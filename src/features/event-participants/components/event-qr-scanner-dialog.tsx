@@ -123,7 +123,7 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-xl w-full">
         <DialogHeader>
           <DialogTitle>{label}</DialogTitle>
           <DialogDescription>Scan a registered member&apos;s event tag. The result is submitted directly to the event service.</DialogDescription>
@@ -136,9 +136,9 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="relative aspect-video overflow-hidden rounded-xl bg-slate-950">
+            <div className="relative aspect-square overflow-hidden rounded-xl bg-slate-950">
               <video ref={videoRef} className="h-full w-full object-cover" muted playsInline autoPlay />
-              <div className="pointer-events-none absolute inset-[18%] rounded-xl border-2 border-lime-300 shadow-[0_0_0_999px_rgba(0,0,0,0.28)]" />
+              <div className="pointer-events-none absolute inset-[10%] rounded-xl border-2 border-lime-300 shadow-[0_0_0_999px_rgba(0,0,0,0.28)]" />
               <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-2 text-sm text-white"><Camera className="h-4 w-4" /> Center the QR code in the frame</div>
               {!cameraStarted && <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/90 p-5 text-center text-white">
                 <Camera className="h-8 w-8 text-slate-300" />
