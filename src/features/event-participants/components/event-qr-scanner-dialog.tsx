@@ -4,7 +4,7 @@ import { DecodeHintType } from '@zxing/library'
 import type { IScannerControls } from '@zxing/browser'
 import { Camera, Check, LoaderCircle, ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import { eventService } from '@/gateway/services'
@@ -123,11 +123,14 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{label}</DialogTitle>
-          <DialogDescription>Scan a registered member&apos;s event tag. The result is submitted directly to the event service.</DialogDescription>
-        </DialogHeader>
+      <DialogContent className="flex flex-col gap-0 p-0 inset-0 translate-x-0 translate-y-0 top-0 left-0 h-[100dvh] w-screen max-w-none rounded-none sm:inset-auto sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:h-auto sm:max-h-[90dvh] sm:w-full sm:max-w-xl sm:rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 pt-4 pb-2 sm:px-6 sm:pt-5 flex-shrink-0">
+          <div>
+            <DialogTitle className="text-base font-semibold">{label}</DialogTitle>
+            <DialogDescription className="text-xs mt-0.5">Scan a registered member&apos;s event tag.</DialogDescription>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-6 min-h-0">
         {result ? (
           <div className="space-y-4 rounded-xl border bg-emerald-50 p-5 text-emerald-950">
             <div className="flex items-center gap-3"><span className="rounded-full bg-emerald-600 p-2 text-white"><Check className="h-5 w-5" /></span><div><p className="font-semibold">Scan recorded</p><p className="text-sm text-emerald-800">{result.userName}</p></div></div>
@@ -135,10 +138,10 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
             <Button variant="outline" className="w-full" onClick={reset}>Scan next member</Button>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="relative aspect-video overflow-hidden rounded-xl bg-slate-950">
+          <div className="space-y-3">
+            <div className="relative w-full overflow-hidden rounded-xl bg-slate-950" style={{ aspectRatio: '1' }}>
               <video ref={videoRef} className="h-full w-full object-cover" muted playsInline autoPlay />
-              <div className="pointer-events-none absolute inset-[18%] rounded-xl border-2 border-lime-300 shadow-[0_0_0_999px_rgba(0,0,0,0.28)]" />
+              <div className="pointer-events-none absolute inset-[8%] rounded-xl border-2 border-lime-300 shadow-[0_0_0_999px_rgba(0,0,0,0.32)]" />
               <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-2 text-sm text-white"><Camera className="h-4 w-4" /> Center the QR code in the frame</div>
               {!cameraStarted && <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/90 p-5 text-center text-white">
                 <Camera className="h-8 w-8 text-slate-300" />
@@ -158,6 +161,7 @@ export function EventQrScannerDialog({ eventId, mode, open, onOpenChange, onScan
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   )
